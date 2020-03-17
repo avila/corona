@@ -3,12 +3,8 @@ title: "Visualisation of evolution of novel coronavirus"
 author: "Marcelo Avila"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document:
+  pdf_document:
     toc: true
-    toc_float: true
-    collapsed: false
-    smooth_scroll: true
-    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -132,7 +128,9 @@ df %>%
   # legend and scales
   scale_y_log10(name="(log scale)", labels=fun_dot, 
                 breaks=10^(0:9),
-                minor_breaks=log10_minor_break()) + 
+                #minor_breaks=log10_minor_break()
+                minor_breaks=(1 * 1.33333^(0:10000))
+                ) + 
   scale_x_date(date_breaks = "1 week", 
                date_labels="%d%b") +
   ggsci::scale_color_aaas() +
@@ -194,20 +192,33 @@ df %>%
   #title
   ggtitle(paste("Evolution of novel coronavirus in", sel_continent), 
           subtitle = paste(sel_category, "(log scale)"))
+
 ```
 
 ```{r}
 make_plot <- function(dta, sel_category="cumulative cases",
                       sel_continent="Europe",
+                      sel_country=NULL, 
                       threshold=100) {
   
   # extract singular form of category
   singular_category <- scan(text = sel_category, what = "", quiet=TRUE)[2] %>% 
     substr(1, nchar(.)-1)
   
-  sel_continent_title <- ifelse(length(sel_continent)>1,
+  sel_plot_title <- ifelse(length(sel_continent)>1,
                                 yes = "selected continents",
                                 no = sel_continent)
+
+  if (!is.null(sel_country)) {
+    dta <- dta %>% filter(location %in% sel_country)
+    sel_continent <- unique(dta$continent)
+    
+    sel_plot_title <- ifelse(length(sel_country)>1,
+                             yes = "selected countries",
+                             no = sel_country)
+  }
+  
+  
   dta %>% 
     filter(category == sel_category, 
            continent %in% sel_continent) %>% 
@@ -226,7 +237,8 @@ make_plot <- function(dta, sel_category="cumulative cases",
     ggplot(aes(x=date_shift, y=value, colour=location)) + 
     # geoms
     geom_point() +
-    geom_line(aes(linetype=location)) + 
+    geom_line(aes(linetype=location, colour=location)) + 
+    #scale_color_grey(start = 0, end = .3) +
     
     # ggrepel 
     ggrepel::geom_label_repel(
@@ -239,15 +251,29 @@ make_plot <- function(dta, sel_category="cumulative cases",
     scale_x_continuous(
       name = paste0("Days past since ", threshold, "th ", singular_category),
       breaks = seq(0, 1e5, 7), minor_breaks = 1:1e3) +
-    scale_color_grey(start = 0, end = .3) +
     
     theme(legend.position = "none", axis.title.y = element_blank()) + 
     #title
-    ggtitle(paste("Evolution of novel coronavirus in", sel_continent_title), 
+    ggtitle(paste("Evolution of novel coronavirus in", sel_plot_title), 
             subtitle = paste(sel_category, "(log scale)"))
 }
 ```
-  
+```{r}
+
+countries <- c("Brazil", "United States",
+               "Italy", "Iran", "South Korea", 
+               "Cingapure", "Japan", "Australia", 
+               "India")
+#countries <- df$location %>% unique
+conts <- "Europe"
+
+make_plot(df, sel_country = countries, threshold = 1,
+          sel_category = "cumulative deaths")
+make_plot(df, sel_continent = conts, threshold = 10,
+          sel_category = "cumulative deaths")
+
+```
+
 
 ```{r}
 categories <- df$category %>% unique() %>% as.character() %>% purrr::set_names()
