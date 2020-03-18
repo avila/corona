@@ -1,0 +1,18 @@
+Bundesland,Anzahl,Differenz_Vortag,Erkr_p_100k_Einw,Todesfaelle,Bes_betroffene,date
+Baden-Württemberg,1609,130,14.5,2,,2020-03-18
+Bayern,1243,134,9.5,4,,2020-03-18
+Berlin,391,46,10.4,0,,2020-03-18
+Brandenburg,92,19,3.7,0,,2020-03-18
+Bremen,69,12,10.1,0,,2020-03-18
+Hamburg,358,48,19.4,0,,2020-03-18
+Hessen,432,59,6.9,0,,2020-03-18
+Mecklenburg-Vorpommern,56,11,3.5,0,,2020-03-18
+Niedersachsen,478,153,6,0,,2020-03-18
+Nordrhein-Westfalen,2372,267,13.2,6,Landkreis Heinsberg,2020-03-18
+Rheinland-Pfalz,474,32,11.6,0,,2020-03-18
+Saarland,88,13,8.9,0,,2020-03-18
+Sachsen,198,16,4.9,0,,2020-03-18
+Sachsen-Anhalt,105,47,4.8,0,,2020-03-18
+Schleswig-Holstein,159,32,5.5,0,,2020-03-18
+Thüringen,74,23,3.5,0,,2020-03-18
+Gesamt,8198,1042,9.9,12,,2020-03-18

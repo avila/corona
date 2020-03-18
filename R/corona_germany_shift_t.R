@@ -4,16 +4,16 @@ wiki_url_de <- "https://en.wikipedia.org/wiki/2020_coronavirus_pandemic_in_Germa
 page_de <- xml2::read_html(wiki_url_de)
 
 
-df_de <- page_de %>% html_nodes("table") %>% .[[4]] %>% 
-  html_table(fill = TRUE, trim=T, header=FALSE) %>% filter(row_number() %in% (3:18) ) %>% 
+df_de <- page_de %>% rvest::html_nodes("table") %>% .[[4]] %>% 
+  rvest::html_table(fill = TRUE, trim=T, header=FALSE) %>% filter(row_number() %in% (3:18) ) %>% 
   na_if("—") 
 
 first_date <- as.Date("2020-02-24")
-names(df_de) <- c("state", 
-                  as.character(first_date + 0:(ncol(df_de)-2)))
+names(df_de) <- c("state", as.character(first_date + 0:(ncol(df_de)-2)))
 
 df_de <- df_de %>% 
-  pivot_longer(-state, names_to = "date") %>% mutate(date = as.Date(date))
+  pivot_longer(-state, names_to = "date") %>% 
+  mutate(date = as.Date(date))
 
 df_de$value <- readr::parse_number(df_de$value)
 #df_de$value <- df_de$value %>% replace_na(0)

@@ -30,7 +30,7 @@ library(countrycode)
 
 ```{r data, message=FALSE, warning=FALSE, include=FALSE}
 url_path <- "https://covid.ourworldindata.org/data/full_data.csv"
-df <- read_csv(url_path) %>%
+df <- readr::read_csv(url_path) %>%
   pivot_longer(-c(location, date), names_to = "category") %>% 
   mutate(value = if_else(is.na(value), 0, value))
 
@@ -90,6 +90,10 @@ log10_minor_break = function (...){
     return(10^(minor_breaks))
   }
 }
+
+calc_cagr <- function(ending, beginning, nr_periods) {
+  return((ending / beginning)^(1/nr_periods))-1
+}
 ```
 
 
@@ -140,6 +144,7 @@ df %>%
 
 
 # Normalized comparison 
+
 ```{r}
 df$continent %>% unique()
 df$category %>% unique() %>% as.character()
@@ -195,7 +200,7 @@ df %>%
 
 ```
 
-```{r}
+```{r def make plot}
 make_plot <- function(dta, sel_category="cumulative cases",
                       sel_continent="Europe",
                       sel_country=NULL, 
@@ -258,108 +263,26 @@ make_plot <- function(dta, sel_category="cumulative cases",
             subtitle = paste(sel_category, "(log scale)"))
 }
 ```
-```{r}
 
-countries <- c("Brazil", "United States",
-               "Italy", "Iran", "South Korea", 
-               "Cingapure", "Japan", "Australia", 
-               "India")
+```{r plots interactive}
+countries <- c("Brazil", "United States", "Italy", "Iran", "South Korea",
+               "Singapore", "Japan", "Australia", "India", "Germany", "Spain",
+               "Portugal", "Switzerland", "Serbia")
+assertthat::are_equal(1, mean(countries %in% df$location))
 #countries <- df$location %>% unique
 conts <- "Europe"
 
-make_plot(df, sel_country = countries, threshold = 1,
+make_plot(df,
+          sel_country = countries,
+          sel_continent = NA,
+          threshold = 1,
           sel_category = "cumulative deaths")
-make_plot(df, sel_continent = conts, threshold = 10,
-          sel_category = "cumulative deaths")
-
 ```
 
 
 ```{r}
-categories <- df$category %>% unique() %>% as.character() %>% purrr::set_names()
-continents <- df$continent %>% unique() %>% as.character() %>% purrr::set_names()
-
-plots_categ <- purrr::map(categories, ~make_plot(df, sel_category = .x, 
-                                                 threshold = 25))
-plots_conts <- purrr::map(continents, ~make_plot(df, sel_continent = .x, 
-                                                 sel_category = "cumulative deaths",
-                                                 threshold = 1))
-
-plots_categ
-plots_conts
-```
-
-
-```{r eval=FALSE, include=FALSE}
-
-
-
-th <- 50
-df_cnt %>% 
-  filter(location %!in% c("International",  "World")) %>% 
-  group_by(location) %>% 
-  mutate(label = ifelse(date == max(date),
-                        as.character(location), 
-                        NA_character_)) %>% 
-  ggplot(aes(x=date, y=value, colour=location)) + 
-  geom_point() +
-  geom_line() + 
-  ggrepel::geom_label_repel(aes(label = label),
-                            nudge_x = 1,
-                            na.rm = TRUE) + 
-  theme(legend.position = "none") + 
-  scale_y_log10(category="Infections (log scale)", labels=fun_dot, 
-                breaks=2^(0:20) * 1) + 
-  scale_x_continuous(category=paste0("Days since ", threshold, "th death"), 
-                     breaks=seq(0, 1e3, 7)) + 
-  ggtitle("Comparison of COVID-19 fatalities by country")
-
-
-
-pop_data <- readr::read_csv("./data/pop_data.csv",
-                            #locale = locale(grouping_mark = "."),
-                            col_types = cols(Density = col_skip(), 
-                                             GrowthRate = col_skip(),
-                                             WorldPercentage = col_skip(), 
-                                             area = col_skip(),
-                                             dropdownData = col_skip(), 
-                                             rank = col_skip()))
-
-threshold = 0.01
-df_pop <- left_join(df, pop_data, by = c("location"="category")) %>%
-  mutate(pop2020 = pop2020 * 1e3)
-df_pop %>% mutate(pop_value = value / pop2020 * 1e5) %>%
-  filter(category==category) %>% 
-  group_by(location) %>% 
-  mutate(check = if_else(pop_value>=threshold, 1, 0)) %>% 
-  filter(check==1) %>% group_by(location) %>% 
-  mutate(date = ave(1:length(location), df$location, FUN = seq_along)) %>% 
-  ungroup(location) %>% arrange(date) %>% 
-  #filter(location %in% selected_countries) %>% 
-  mutate(location=fct_reorder2(location, date, pop_value)) %>% 
-  
-  filter(location %!in% c("International",  "World")) %>% 
-  group_by(location) %>% 
-  mutate(label = ifelse(date == max(date),
-                        as.character(location), 
-                        NA_character_)) %>% 
-  ggplot(aes(x=date, y=pop_value, colour=location)) + 
-  geom_point() + geom_line() + 
-  ggrepel::geom_label_repel(aes(label = label),
-                            nudge_x = 1,
-                            na.rm = TRUE) + 
-  theme(legend.position = "none") + 
-  scale_y_log10(category="(log scale)", labels=fun_dot, 
-                breaks=2^(0:20) / 1000 ) + 
-  scale_x_continuous(category=paste0("Days since ", th, "th case"), 
-                     breaks=seq(0, 1e3, 7)) + 
-  ggtitle("Fatalities by 100.000 inhabitants")
 
 
 ```
 
-
-```{r reset_options, message=TRUE, warning=TRUE, include=FALSE}
-Sys.setlocale("LC_TIME", sys_time_local_old)
-```
 
