@@ -23,6 +23,9 @@ Baden-Württemberg,2020-03-15,827
 Baden-Württemberg,2020-03-16,1105
 Baden-Württemberg,2020-03-17,1479
 Baden-Württemberg,2020-03-18,1609
+Baden-Württemberg,2020-03-19,2155
+Baden-Württemberg,2020-03-20,2746
+Baden-Württemberg,2020-03-21,3668
 Bavaria,2020-02-24,14
 Bavaria,2020-02-25,14
 Bavaria,2020-02-26,14
@@ -47,6 +50,9 @@ Bavaria,2020-03-15,886
 Bavaria,2020-03-16,1067
 Bavaria,2020-03-17,1109
 Bavaria,2020-03-18,1243
+Bavaria,2020-03-19,1692
+Bavaria,2020-03-20,2401
+Bavaria,2020-03-21,2960
 Berlin,2020-02-24,0
 Berlin,2020-02-25,0
 Berlin,2020-02-26,0
@@ -71,6 +77,9 @@ Berlin,2020-03-15,283
 Berlin,2020-03-16,300
 Berlin,2020-03-17,345
 Berlin,2020-03-18,391
+Berlin,2020-03-19,573
+Berlin,2020-03-20,731
+Berlin,2020-03-21,866
 Brandenburg,2020-02-24,0
 Brandenburg,2020-02-25,0
 Brandenburg,2020-02-26,0
@@ -95,6 +104,9 @@ Brandenburg,2020-03-15,84
 Brandenburg,2020-03-16,94
 Brandenburg,2020-03-17,73
 Brandenburg,2020-03-18,92
+Brandenburg,2020-03-19,134
+Brandenburg,2020-03-20,192
+Brandenburg,2020-03-21,254
 Bremen,2020-02-24,0
 Bremen,2020-02-25,0
 Bremen,2020-02-26,0
@@ -119,6 +131,9 @@ Bremen,2020-03-15,53
 Bremen,2020-03-16,56
 Bremen,2020-03-17,57
 Bremen,2020-03-18,69
+Bremen,2020-03-19,80
+Bremen,2020-03-20,121
+Bremen,2020-03-21,142
 Hamburg,2020-02-24,0
 Hamburg,2020-02-25,0
 Hamburg,2020-02-26,0
@@ -143,6 +158,9 @@ Hamburg,2020-03-15,162
 Hamburg,2020-03-16,260
 Hamburg,2020-03-17,310
 Hamburg,2020-03-18,358
+Hamburg,2020-03-19,432
+Hamburg,2020-03-20,586
+Hamburg,2020-03-21,587
 Hesse,2020-02-24,0
 Hesse,2020-02-25,0
 Hesse,2020-02-26,0
@@ -167,6 +185,9 @@ Hesse,2020-03-15,286
 Hesse,2020-03-16,342
 Hesse,2020-03-17,373
 Hesse,2020-03-18,432
+Hesse,2020-03-19,682
+Hesse,2020-03-20,813
+Hesse,2020-03-21,1080
 Mecklenburg-Vorpommern,2020-02-24,0
 Mecklenburg-Vorpommern,2020-02-25,0
 Mecklenburg-Vorpommern,2020-02-26,0
@@ -191,6 +212,9 @@ Mecklenburg-Vorpommern,2020-03-15,50
 Mecklenburg-Vorpommern,2020-03-16,51
 Mecklenburg-Vorpommern,2020-03-17,45
 Mecklenburg-Vorpommern,2020-03-18,56
+Mecklenburg-Vorpommern,2020-03-19,98
+Mecklenburg-Vorpommern,2020-03-20,131
+Mecklenburg-Vorpommern,2020-03-21,165
 Lower Saxony,2020-02-24,0
 Lower Saxony,2020-02-25,0
 Lower Saxony,2020-02-26,0
@@ -215,6 +239,9 @@ Lower Saxony,2020-03-15,287
 Lower Saxony,2020-03-16,391
 Lower Saxony,2020-03-17,325
 Lower Saxony,2020-03-18,478
+Lower Saxony,2020-03-19,669
+Lower Saxony,2020-03-20,803
+Lower Saxony,2020-03-21,1023
 North Rhine-Westphalia,2020-02-24,0
 North Rhine-Westphalia,2020-02-25,1
 North Rhine-Westphalia,2020-02-26,2
@@ -239,6 +266,9 @@ North Rhine-Westphalia,2020-03-15,1407
 North Rhine-Westphalia,2020-03-16,1541
 North Rhine-Westphalia,2020-03-17,2105
 North Rhine-Westphalia,2020-03-18,2372
+North Rhine-Westphalia,2020-03-19,3033
+North Rhine-Westphalia,2020-03-20,3497
+North Rhine-Westphalia,2020-03-21,3542
 Rhineland-Palatinate,2020-02-24,0
 Rhineland-Palatinate,2020-02-25,0
 Rhineland-Palatinate,2020-02-26,0
@@ -263,6 +293,9 @@ Rhineland-Palatinate,2020-03-15,168
 Rhineland-Palatinate,2020-03-16,325
 Rhineland-Palatinate,2020-03-17,442
 Rhineland-Palatinate,2020-03-18,474
+Rhineland-Palatinate,2020-03-19,637
+Rhineland-Palatinate,2020-03-20,801
+Rhineland-Palatinate,2020-03-21,938
 Saarland,2020-02-24,0
 Saarland,2020-02-25,0
 Saarland,2020-02-26,0
@@ -287,6 +320,9 @@ Saarland,2020-03-15,32
 Saarland,2020-03-16,85
 Saarland,2020-03-17,75
 Saarland,2020-03-18,88
+Saarland,2020-03-19,99
+Saarland,2020-03-20,146
+Saarland,2020-03-21,187
 Saxony,2020-02-24,0
 Saxony,2020-02-25,0
 Saxony,2020-02-26,0
@@ -311,6 +347,9 @@ Saxony,2020-03-15,130
 Saxony,2020-03-16,140
 Saxony,2020-03-17,182
 Saxony,2020-03-18,198
+Saxony,2020-03-19,275
+Saxony,2020-03-20,394
+Saxony,2020-03-21,567
 Saxony-Anhalt,2020-02-24,0
 Saxony-Anhalt,2020-02-25,0
 Saxony-Anhalt,2020-02-26,0
@@ -335,6 +374,9 @@ Saxony-Anhalt,2020-03-15,47
 Saxony-Anhalt,2020-03-16,77
 Saxony-Anhalt,2020-03-17,58
 Saxony-Anhalt,2020-03-18,105
+Saxony-Anhalt,2020-03-19,140
+Saxony-Anhalt,2020-03-20,180
+Saxony-Anhalt,2020-03-21,188
 Schleswig-Holstein,2020-02-24,0
 Schleswig-Holstein,2020-02-25,0
 Schleswig-Holstein,2020-02-26,0
@@ -359,6 +401,9 @@ Schleswig-Holstein,2020-03-15,103
 Schleswig-Holstein,2020-03-16,123
 Schleswig-Holstein,2020-03-17,127
 Schleswig-Holstein,2020-03-18,159
+Schleswig-Holstein,2020-03-19,202
+Schleswig-Holstein,2020-03-20,266
+Schleswig-Holstein,2020-03-21,308
 Thuringia,2020-02-24,0
 Thuringia,2020-02-25,0
 Thuringia,2020-02-26,0
@@ -383,3 +428,6 @@ Thuringia,2020-03-15,51
 Thuringia,2020-03-16,55
 Thuringia,2020-03-17,51
 Thuringia,2020-03-18,74
+Thuringia,2020-03-19,98
+Thuringia,2020-03-20,149
+Thuringia,2020-03-21,187

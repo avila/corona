@@ -1,0 +1,89 @@
+---
+title: "Effect of COVID-19 pandemic on the Restaurant Industry"
+author: "Marcelo Avila"
+date: "21/03/2020"
+output:
+  html_document: 
+    number_sections: yes
+    toc: yes
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+# for dates in english 
+sys_time_local_old <- Sys.getlocale("LC_TIME")
+Sys.setlocale("LC_TIME", "en_US.UTF-8")
+
+# avoid scientific notation
+options(scipen = 999)
+```
+
+# Libraries 
+```{r lib, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+# Read data
+
+```{r, fig.width=8, fig.height=8, warning=FALSE, message=FALSE}
+df_ot <- read_csv("./data/state_of_industry_data.csv") %>%
+  pivot_longer( -c(Type, Name), names_to = "Date", values_to = "Value") %>% 
+  mutate(Date = as.Date(Date, format="%m/%d"))
+
+countries1 <- c("Germany", "United States", "United Kingdom", "Global")
+countries2 <- c("Mexico", "Ireland", "Canada", "Australia")
+
+df_ot <- df_ot %>% mutate(
+  Group = case_when(Name %in% countries1 ~ 1,
+                    Name %in% countries2 ~ 2,
+                    TRUE ~ 3))
+updated_on <- df_ot$Date %>% max()
+```
+
+# Plot by Country 
+
+```{r Plot by Country, fig.width=12, fig.height=12}
+
+plot <- df_ot %>% filter(Group %in% 1:2) %>% 
+  ggplot(aes(x = Date, y = Value, color=Value)) + 
+  geom_line(show.legend = F) + geom_point() +
+  theme(legend.position = "none", 
+        axis.title=element_blank()) + 
+  scale_y_continuous(breaks = seq(-100, 0, by = 20)) +
+  scale_x_date(breaks="1 week", minor_breaks = "day",date_labels = "%b %d") +
+  coord_cartesian(ylim=c(-120, 20)) +
+  
+  
+  labs(title = "Effect on Reastaurant Reservations by Country",
+       subtitle = paste0("Year-over-year Percentage Change (Updated on : ", updated_on, ")"), 
+       caption = "Data source: https://www.opentable.com/state-of-industry") +
+  geom_text(aes(label = Value), nudge_y=-10, nudge_x = -1/3, size=3) +
+  facet_wrap(~Name, ncol=2)
+
+print(plot)
+```
+
+# Plot by US States 
+
+```{r Plot by US States, fig.width=16, fig.height=50}
+plot <- df_ot %>% filter(Group %in% 3) %>% 
+  ggplot(aes(x = Date, y = Value, color=Value)) + 
+  geom_line(show.legend = F) + geom_point() +
+  theme(legend.position = "none", 
+        axis.title=element_blank()) + 
+  scale_y_continuous(breaks = seq(-100, 0, by = 20)) +
+  scale_x_date(breaks="1 week", minor_breaks = "day",date_labels = "%b %d") +
+  coord_cartesian(ylim=c(-120, 20)) +
+
+  
+  labs(title = "Effect on Reastaurant Reservations by US States",
+       subtitle = paste0("Year-over-year Percentage Change (Updated on : ", updated_on, ")"), 
+       caption = "Data source: https://www.opentable.com/state-of-industry") +
+  geom_text(aes(label = Value), nudge_y=-13, nudge_x = -1/3, size=2.3) +
+  facet_wrap(~Name, ncol=4) +
+  theme(strip.background = element_blank(), strip.placement = "outside")
+
+print(plot)
+```
+

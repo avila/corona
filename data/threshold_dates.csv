@@ -1,0 +1,160 @@
+location,category,th_1,th_5,th_10,th_25,th_50,th_100
+Afghanistan,cumulative cases,2020-02-25,2020-03-12,2020-03-15,NA,NA,NA
+Albania,cumulative cases,2020-02-25,2020-03-11,2020-03-11,2020-03-14,2020-03-17,NA
+Albania,cumulative deaths,2020-03-14,NA,NA,NA,NA,NA
+Algeria,cumulative cases,2020-02-25,2020-03-03,2020-03-05,2020-03-12,2020-03-17,NA
+Algeria,cumulative deaths,2020-03-12,NA,NA,NA,NA,NA
+Andorra,cumulative cases,2020-02-25,2020-03-17,2020-03-17,NA,NA,NA
+Argentina,cumulative cases,2020-02-25,2020-03-08,2020-03-09,2020-03-13,2020-03-16,NA
+Argentina,cumulative deaths,2020-03-08,NA,NA,NA,NA,NA
+Armenia,cumulative cases,2020-02-25,2020-03-14,2020-03-16,2020-03-16,2020-03-17,NA
+Australia,cumulative cases,2020-02-25,2020-01-28,2020-02-01,2020-03-01,2020-03-05,2020-03-11
+Australia,cumulative deaths,2020-03-02,2020-03-16,NA,NA,NA,NA
+Austria,cumulative cases,2020-02-25,2020-02-29,2020-03-01,2020-03-05,2020-03-07,2020-03-08
+Austria,cumulative deaths,2020-03-13,NA,NA,NA,NA,NA
+Azerbaijan,cumulative cases,2020-02-25,2020-03-07,2020-03-13,NA,NA,NA
+Bahrain,cumulative cases,NA,NA,2020-02-26,2020-02-26,2020-03-08,2020-03-10
+Bahrain,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Bangladesh,cumulative cases,2020-02-25,2020-03-16,NA,NA,NA,NA
+Belarus,cumulative cases,2020-02-25,2020-03-05,2020-03-12,2020-03-16,NA,NA
+Belgium,cumulative cases,2020-02-25,2020-03-03,2020-03-05,2020-03-06,2020-03-06,2020-03-07
+Belgium,cumulative deaths,2020-03-16,2020-03-16,NA,NA,NA,NA
+Bolivia,cumulative cases,2020-02-25,2020-03-16,2020-03-16,NA,NA,NA
+Bosnia and Herzegovina,cumulative cases,2020-02-25,2020-03-14,2020-03-14,NA,NA,NA
+Brazil,cumulative cases,2020-02-25,2020-03-06,2020-03-07,2020-03-09,2020-03-12,2020-03-15
+Brunei,cumulative cases,2020-02-25,2020-03-12,2020-03-12,2020-03-14,2020-03-16,NA
+Bulgaria,cumulative cases,2020-02-25,2020-03-11,2020-03-15,2020-03-15,2020-03-16,NA
+Bulgaria,cumulative deaths,2020-03-12,NA,NA,NA,NA,NA
+Burkina Faso,cumulative cases,2020-02-25,2020-03-17,2020-03-17,NA,NA,NA
+Cambodia,cumulative cases,2020-02-25,2020-03-13,2020-03-16,NA,NA,NA
+Cameroon,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Canada,cumulative cases,2020-02-25,2020-02-05,2020-02-25,2020-03-03,2020-03-07,2020-03-13
+Canada,cumulative deaths,2020-03-11,NA,NA,NA,NA,NA
+Cayman Islands,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Chile,cumulative cases,2020-02-25,2020-03-07,2020-03-09,2020-03-13,2020-03-15,2020-03-17
+China,cumulative deaths,NA,NA,2020-01-23,2020-01-24,2020-01-26,2020-01-28
+Colombia,cumulative cases,2020-02-25,2020-03-12,2020-03-14,2020-03-17,NA,NA
+Costa Rica,cumulative cases,NA,NA,2020-03-11,2020-03-17,NA,NA
+Croatia,cumulative cases,2020-02-25,2020-02-29,2020-03-06,2020-03-14,2020-03-17,NA
+Cuba,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Cyprus,cumulative cases,2020-02-25,2020-03-12,2020-03-14,2020-03-16,NA,NA
+Czech Republic,cumulative cases,2020-02-25,2020-03-04,2020-03-06,2020-03-08,2020-03-11,2020-03-13
+Cote d'Ivoire,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Denmark,cumulative cases,2020-02-25,2020-03-03,2020-03-05,2020-03-08,2020-03-10,2020-03-11
+Denmark,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Dominican Republic,cumulative cases,2020-02-25,2020-03-10,2020-03-17,NA,NA,NA
+Dominican Republic,cumulative deaths,2020-03-17,NA,NA,NA,NA,NA
+Ecuador,cumulative cases,2020-02-25,2020-03-03,2020-03-06,2020-03-16,2020-03-17,NA
+Ecuador,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Egypt,cumulative cases,2020-02-25,2020-03-08,2020-03-08,2020-03-08,2020-03-09,2020-03-16
+Egypt,cumulative deaths,2020-03-09,NA,NA,NA,NA,NA
+Estonia,cumulative cases,2020-02-25,2020-03-07,2020-03-07,2020-03-14,2020-03-14,2020-03-16
+Ethiopia,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Faeroe Islands,cumulative cases,2020-02-25,2020-03-15,2020-03-16,2020-03-17,NA,NA
+Finland,cumulative cases,2020-02-25,2020-03-02,2020-03-06,2020-03-09,2020-03-13,2020-03-13
+France,cumulative cases,2020-02-25,2020-01-30,2020-02-09,2020-02-28,2020-02-29,2020-03-01
+France,cumulative deaths,2020-02-16,2020-03-06,2020-03-08,2020-03-10,2020-03-13,2020-03-16
+Georgia,cumulative cases,2020-02-25,2020-03-06,2020-03-08,2020-03-13,NA,NA
+Germany,cumulative cases,2020-02-25,2020-01-31,2020-02-03,2020-02-28,2020-02-29,2020-03-02
+Germany,cumulative deaths,2020-03-10,2020-03-13,2020-03-16,NA,NA,NA
+Ghana,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Greece,cumulative cases,2020-02-25,2020-03-02,2020-03-06,2020-03-06,2020-03-08,2020-03-15
+Greece,cumulative deaths,2020-03-12,NA,NA,NA,NA,NA
+Guadeloupe,cumulative cases,2020-02-25,2020-03-16,2020-03-17,NA,NA,NA
+Honduras,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Hungary,cumulative cases,2020-02-25,2020-03-07,2020-03-11,2020-03-15,2020-03-17,NA
+Hungary,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Iceland,cumulative cases,2020-02-25,2020-03-03,2020-03-04,2020-03-05,2020-03-09,2020-03-15
+India,cumulative cases,2020-02-25,2020-03-03,2020-03-05,2020-03-05,2020-03-11,2020-03-15
+India,cumulative deaths,2020-03-13,NA,NA,NA,NA,NA
+Indonesia,cumulative cases,2020-02-25,2020-03-08,2020-03-10,2020-03-11,2020-03-14,2020-03-15
+Indonesia,cumulative deaths,2020-03-11,2020-03-17,NA,NA,NA,NA
+International,cumulative cases,NA,NA,NA,2020-02-07,2020-02-07,2020-02-11
+International,cumulative deaths,2020-02-20,2020-02-29,NA,NA,NA,NA
+Iran,cumulative cases,2020-02-25,2020-02-21,2020-02-22,2020-02-23,2020-02-25,2020-02-27
+Iran,cumulative deaths,2020-02-25,2020-02-23,2020-02-25,2020-02-28,2020-03-02,2020-03-06
+Iraq,cumulative cases,2020-02-25,2020-02-26,2020-03-01,2020-03-03,2020-03-08,2020-03-16
+Iraq,cumulative deaths,2020-03-05,2020-03-09,NA,NA,NA,NA
+Ireland,cumulative cases,2020-02-25,2020-03-06,2020-03-06,2020-03-11,2020-03-13,2020-03-15
+Ireland,cumulative deaths,2020-03-12,NA,NA,NA,NA,NA
+Israel,cumulative cases,2020-02-25,2020-02-29,2020-03-03,2020-03-08,2020-03-11,2020-03-14
+Italy,cumulative cases,2020-02-25,2020-02-22,2020-02-23,2020-02-23,2020-02-23,2020-02-24
+Italy,cumulative deaths,2020-02-23,2020-02-25,2020-02-26,2020-03-01,2020-03-03,2020-03-05
+Jamaica,cumulative cases,2020-02-25,2020-03-14,2020-03-16,NA,NA,NA
+Japan,cumulative cases,2020-02-25,2020-01-28,2020-01-30,2020-02-06,2020-02-16,2020-02-22
+Japan,cumulative deaths,2020-02-14,2020-02-29,2020-03-11,2020-03-17,NA,NA
+Jordan,cumulative cases,2020-02-25,2020-03-16,2020-03-17,2020-03-17,NA,NA
+Kuwait,cumulative cases,2020-02-25,2020-02-25,2020-02-26,2020-02-27,2020-03-02,2020-03-14
+Latvia,cumulative cases,2020-02-25,2020-03-10,2020-03-12,2020-03-15,NA,NA
+Lebanon,cumulative cases,2020-02-25,2020-03-02,2020-03-02,2020-03-08,2020-03-12,2020-03-17
+Lebanon,cumulative deaths,2020-03-11,NA,NA,NA,NA,NA
+Liechtenstein,cumulative cases,2020-02-25,2020-03-16,NA,NA,NA,NA
+Lithuania,cumulative cases,2020-02-25,2020-03-14,2020-03-16,NA,NA,NA
+Luxembourg,cumulative cases,2020-02-25,2020-03-10,2020-03-12,2020-03-14,2020-03-17,NA
+Luxembourg,cumulative deaths,2020-03-14,NA,NA,NA,NA,NA
+Malaysia,cumulative cases,2020-02-25,2020-01-30,2020-02-04,2020-03-03,2020-03-04,2020-03-10
+Maldives,cumulative cases,2020-02-25,2020-03-11,2020-03-15,NA,NA,NA
+Malta,cumulative cases,2020-02-25,2020-03-12,2020-03-14,2020-03-17,NA,NA
+Martinique,cumulative cases,2020-02-25,2020-03-14,2020-03-15,NA,NA,NA
+Mexico,cumulative cases,2020-02-25,2020-03-02,2020-03-12,2020-03-14,2020-03-16,NA
+Monaco,cumulative cases,2020-02-25,2020-03-16,NA,NA,NA,NA
+Morocco,cumulative deaths,2020-03-11,NA,NA,NA,NA,NA
+Morocco,cumulative cases,2020-02-25,2020-03-12,2020-03-15,2020-03-16,NA,NA
+Netherlands,cumulative cases,2020-02-25,2020-03-01,2020-03-02,2020-03-04,2020-03-06,2020-03-07
+Netherlands,cumulative deaths,2020-03-07,2020-03-12,2020-03-14,NA,NA,NA
+New Zealand,cumulative cases,2020-02-25,2020-03-07,2020-03-17,NA,NA,NA
+Macedonia,cumulative cases,2020-02-25,2020-03-10,2020-03-15,NA,NA,NA
+Norway,cumulative cases,2020-02-25,2020-02-29,2020-03-01,2020-03-03,2020-03-05,2020-03-07
+Norway,cumulative deaths,2020-03-13,NA,NA,NA,NA,NA
+Palestine,cumulative cases,2020-02-25,2020-03-06,2020-03-07,2020-03-10,NA,NA
+Oman,cumulative cases,2020-02-25,2020-02-28,2020-03-04,NA,NA,NA
+Pakistan,cumulative cases,2020-02-25,2020-03-03,2020-03-10,2020-03-15,2020-03-16,2020-03-17
+Panama,cumulative cases,2020-02-25,2020-03-11,2020-03-12,2020-03-14,2020-03-17,NA
+Panama,cumulative deaths,2020-03-11,NA,NA,NA,NA,NA
+Paraguay,cumulative cases,2020-02-25,2020-03-11,NA,NA,NA,NA
+Peru,cumulative cases,2020-02-25,2020-03-08,2020-03-11,2020-03-14,2020-03-16,NA
+Philippines,cumulative deaths,2020-02-02,2020-03-15,2020-03-16,NA,NA,NA
+Philippines,cumulative cases,2020-02-25,2020-03-06,2020-03-09,2020-03-10,2020-03-12,2020-03-15
+Poland,cumulative cases,2020-02-25,2020-03-07,2020-03-09,2020-03-12,2020-03-14,2020-03-15
+Poland,cumulative deaths,2020-03-13,NA,NA,NA,NA,NA
+Portugal,cumulative cases,2020-02-25,2020-03-05,2020-03-07,2020-03-09,2020-03-14,2020-03-14
+Qatar,cumulative cases,2020-02-25,2020-03-03,2020-03-07,2020-03-12,2020-03-12,2020-03-12
+South Korea,cumulative cases,2020-02-25,2020-01-31,2020-01-31,2020-02-09,2020-02-19,2020-02-20
+South Korea,cumulative deaths,2020-02-20,2020-02-23,2020-02-25,2020-03-03,2020-03-08,NA
+Moldova,cumulative cases,2020-02-25,2020-03-14,2020-03-15,2020-03-17,NA,NA
+Romania,cumulative cases,2020-02-25,2020-03-06,2020-03-08,2020-03-11,2020-03-14,2020-03-15
+Russia,cumulative cases,2020-02-25,2020-03-07,2020-03-12,2020-03-13,2020-03-16,NA
+Reunion,cumulative cases,2020-02-25,2020-03-14,NA,NA,NA,NA
+San Marino,cumulative cases,2020-02-25,2020-03-03,2020-03-05,2020-03-08,2020-03-11,2020-03-17
+San Marino,cumulative deaths,2020-03-08,2020-03-15,NA,NA,NA,NA
+Saudi Arabia,cumulative cases,2020-02-25,2020-03-06,2020-03-08,2020-03-14,2020-03-14,2020-03-15
+Senegal,cumulative cases,2020-02-25,2020-03-13,2020-03-13,2020-03-16,NA,NA
+Serbia,cumulative cases,2020-02-25,2020-03-11,2020-03-11,2020-03-14,2020-03-17,NA
+Singapore,cumulative cases,2020-02-25,2020-01-28,2020-01-30,2020-02-06,2020-02-13,2020-03-01
+Slovakia,cumulative cases,2020-02-25,2020-03-09,2020-03-12,2020-03-14,2020-03-16,NA
+Slovenia,cumulative cases,2020-02-25,2020-03-06,2020-03-08,2020-03-11,2020-03-12,2020-03-14
+South Africa,cumulative cases,2020-02-25,2020-03-10,2020-03-12,2020-03-15,2020-03-16,NA
+Spain,cumulative cases,2020-02-25,2020-02-27,2020-02-27,2020-02-28,2020-03-03,2020-03-03
+Spain,cumulative deaths,2020-03-05,2020-03-07,2020-03-09,2020-03-10,2020-03-13,2020-03-14
+Sri Lanka,cumulative cases,2020-02-25,2020-03-14,2020-03-15,2020-03-17,NA,NA
+Sudan,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Sweden,cumulative cases,2020-02-25,2020-02-28,2020-02-29,2020-03-05,2020-03-06,2020-03-07
+Sweden,cumulative deaths,2020-03-16,NA,NA,NA,NA,NA
+Switzerland,cumulative cases,2020-02-25,2020-02-28,2020-02-29,2020-03-03,2020-03-05,2020-03-07
+Switzerland,cumulative deaths,2020-03-06,2020-03-13,2020-03-15,NA,NA,NA
+Thailand,cumulative cases,2020-02-25,2020-01-26,2020-01-28,2020-02-05,2020-03-08,2020-03-16
+Thailand,cumulative deaths,2020-03-02,NA,NA,NA,NA,NA
+United Kingdom,cumulative cases,2020-02-25,2020-02-11,2020-02-25,2020-03-02,2020-03-04,2020-03-06
+United Kingdom,cumulative deaths,2020-03-07,2020-03-11,2020-03-14,2020-03-16,2020-03-17,NA
+Trinidad and Tobago,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Tunisia,cumulative cases,2020-02-25,2020-03-11,2020-03-14,NA,NA,NA
+Turkey,cumulative cases,2020-02-25,2020-03-14,2020-03-17,2020-03-17,NA,NA
+Ukraine,cumulative deaths,2020-03-14,NA,NA,NA,NA,NA
+Ukraine,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+United Arab Emirates,cumulative cases,2020-02-25,2020-02-02,2020-02-22,2020-03-04,2020-03-10,NA
+United States,cumulative cases,2020-02-25,2020-01-27,2020-02-03,2020-02-22,2020-02-25,2020-03-04
+United States,cumulative deaths,2020-03-03,2020-03-04,2020-03-06,2020-03-11,2020-03-17,NA
+Uruguay,cumulative cases,2020-02-25,2020-03-17,NA,NA,NA,NA
+Venezuela,cumulative cases,2020-02-25,2020-03-17,2020-03-17,2020-03-17,NA,NA
+Vietnam,cumulative cases,2020-02-25,2020-01-31,2020-02-05,2020-03-09,2020-03-15,NA
+World,cumulative deaths,NA,NA,2020-01-23,2020-01-24,2020-01-26,2020-01-28

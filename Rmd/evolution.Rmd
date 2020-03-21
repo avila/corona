@@ -1,0 +1,213 @@
+---
+title: "Evolution of COVID-19 Pandemic across countries and Continents"
+date: "21/03/2020"
+output:
+  html_document: 
+    number_sections: yes
+    toc: yes
+    code_folding: hide
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# for dates in english 
+sys_time_local_old <- Sys.getlocale("LC_TIME")
+Sys.setlocale("LC_TIME", "en_US.UTF-8")
+
+# avoid scientific notation
+options(scipen = 999)
+```
+
+# load libraries
+
+```{r libs, include=FALSE}
+library(tidyverse)
+library(ggsci)
+library(countrycode)
+library(readxl)
+library(httr)
+```
+
+# define helper functions
+
+```{r define helper functions}
+fun_dot <- function(x) format(x, big.mark = " ",
+                              scientific = FALSE,
+                              decimal.mark = ".")
+
+# negative in
+`%!in%` <- Negate(`%in%`)
+
+# y scale
+log10_minor_break = function (...){
+  function(x) {
+    minx         = floor(min(log10(x), na.rm=T))-1;
+    maxx         = ceiling(max(log10(x), na.rm=T))+1;
+    n_major      = maxx-minx+1;
+    major_breaks = seq(minx, maxx, by=1)
+    minor_breaks = 
+      rep(log10(seq(1, 9, by=1)), times = n_major)+
+      rep(major_breaks, each = 9)
+    return(10^(minor_breaks))
+  }
+}
+
+# for conditionaly filtering
+# (from: https://github.com/tidyverse/magrittr/issues/109#issuecomment-371999796)
+conditionally <- function(fun){
+    function(first_arg, ..., execute){
+        if(execute) return(fun(first_arg, ...))
+        else return(first_arg)
+    }
+}
+cond_filter <- conditionally(filter)
+cond_select <- conditionally(select)
+```
+
+# load data 
+
+```{r load data, message=FALSE, warning=FALSE, include=FALSE}
+url <- paste("https://www.ecdc.europa.eu/sites/default/files/documents/",
+             "COVID-19-geographic-disbtribution-worldwide-",
+             format(Sys.time()-6000, "%Y-%m-%d"), ".xlsx", sep = "")
+
+#download the dataset from the website to a local temporary file
+GET(url, authenticate(":", ":", type="ntlm"),
+    write_disk(tf <- tempfile(fileext = ".xlsx", pattern = "covid_")))
+
+#read the Dataset sheet into “R”
+df <- read_excel(tf) %>% 
+  rename(Countries_territories=`Countries and territories`, 
+         Date=DateRep, 
+         Daily_Cases=Cases, 
+         Daily_Deaths=Deaths) %>% 
+  arrange(Countries_territories, Date) %>% 
+  select(-c(Year, Day, Month))
+df$Countries_territories <- df$Countries_territories %>% 
+  str_replace_all("_", " ") %>% 
+  str_to_lower() %>% 
+  tools::toTitleCase()
+```
+
+# wrangle 
+
+```{r gen cum, message=FALSE, warning=FALSE}
+df <- df %>% group_by(Countries_territories) %>% 
+  mutate(Cum_Cases = cumsum(Daily_Cases), 
+         Cum_Deaths = cumsum(Daily_Deaths))
+df <- df %>%
+  pivot_longer(cols = c(Daily_Cases, Daily_Deaths, Cum_Cases, Cum_Deaths), 
+               names_to = "Category")
+
+df$Countries_territories <- str_replace_all(df$Countries_territories, "_", " ")
+df <- df %>% mutate(
+  Continent=countrycode(Countries_territories,
+                        origin = "country.name",
+                        destination = "continent"),
+  Continent=if_else(Countries_territories=="Kosovo", 
+                    "Europe", Continent),
+  Continent=if_else(Continent == "Oceania", "Asia", Continent))
+
+```
+# define plot function 
+
+```{r gen plot function, fig.width=16, fig.height=12}
+gen_df_to_plot <- function(data, filter_location, null_day_threshold, filter_category) {
+
+  # gen data to plot
+  df %>% 
+    group_by(Countries_territories) %>% 
+    filter(Category == filter_category) %>% 
+    filter(value >= null_day_threshold) %>% 
+    mutate(date_shift=0:(n()-1)/7) %>% # generate date shifted after null_day_threshold
+    ungroup(Countries_territories) %>% 
+    arrange(Continent, Countries_territories, date_shift) %>% 
+    filter(toupper(Countries_territories) %in% toupper(filter_location) | Continent %in% filter_location)
+}
+
+gen_plot <- function(data, filter_location,
+                     filter_category="Cum_Cases",
+                     null_day_threshold=1,
+                     emph_color="red") {
+  
+  df_to_plot <- gen_df_to_plot(data = data,
+                               filter_location,
+                               filter_category,
+                               null_day_threshold = null_day_threshold)
+  
+  df_to_plot$Countries_territories_bkg <- df_to_plot$Countries_territories
+  nr_end <- case_when(null_day_threshold %% 10 == 1 ~ "st ", 
+                      null_day_threshold %% 10 == 2 ~ "nd ",
+                      null_day_threshold %% 10 == 3 ~ "rd ", 
+                      TRUE ~ "th ")
+  
+  # plot descriptions
+  updated_at <- data$Date %>% max() %>% format("%b %d")
+  
+  gg_category <- ifelse(filter_category=="Cum_Deaths", "death", "case")
+  gg_title <- "Evolution of COVID-19"
+  gg_subtitle <- paste0("Cumulative ", gg_category, "s since ", null_day_threshold, nr_end, gg_category,
+                        " (log scale, updated on ", updated_at, ")") %>%
+    tools::toTitleCase()
+  gg_x_name <- paste0("Weeks past since ", null_day_threshold, nr_end, gg_category) %>%
+    tools::toTitleCase()
+  gg_caption <- "Data Source: https://www.ecdc.europa.eu"
+  
+  # plot
+  df_to_plot %>% 
+    ggplot(aes(x=date_shift, y=value, group=Countries_territories)) +
+    geom_line(data=df_to_plot[, c("date_shift", "value", "Countries_territories_bkg")],
+              aes(x=date_shift, y=value, group=Countries_territories_bkg), 
+              color="grey") +
+    geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
+    facet_wrap(~Countries_territories) +
+    
+    #title
+    labs(title=gg_title, subtitle=gg_subtitle, caption=gg_caption) +
+    scale_y_log10(labels=fun_dot, breaks = 10^(0:9), minor_breaks=log10_minor_break()) + 
+    scale_x_continuous(name=gg_x_name, breaks=seq(0, 1e3, 1), minor_breaks=1:1e3/7)
+}
+gg_theme <- theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text=element_text(size=rel(1)),
+        plot.title = element_text(size=rel(3)),
+        plot.subtitle = element_text(size=rel(2)))
+```
+
+# plot for selected countries
+
+```{r fig selected countries, fig.width=10, fig.height=8, warning=F, message=F}
+filter_countries <- c("Brazil", "Germany", "Italy", "South Korea", 
+                      "Spain", "France", "Iran", "Japan", "Singapore",
+                      "India", "United states of america", "United kingdom", 
+                      "Russia", "Chile", "Colombia", "Portugal")
+
+for (cat in c("Cum_Cases", "Cum_Deaths")) {
+  threshold <- ifelse(cat=="Cum_Cases", 100, 1 )
+  
+  p <- gen_plot(df, filter_location = filter_countries, emph_color = "red", 
+           null_day_threshold = threshold, 
+           filter_category = cat) + 
+    gg_theme
+  print(p)
+}
+```
+
+# plot for selected continents 
+
+```{r fig continents, fig.width=16, fig.height=12, warning=F, message=F}
+for (cat in c("Cum_Cases", "Cum_Deaths")) {
+  threshold <- ifelse(cat=="Cum_Cases", 50, 1 )
+  for (cont in unique(df$Continent)) {
+    p <- gen_plot(df,
+                  filter_location = cont,
+                  emph_color = "red", 
+                  null_day_threshold = threshold, 
+                  filter_category = cat) + gg_theme
+    print(p)
+  }
+}
+```
+

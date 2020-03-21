@@ -1,12 +1,14 @@
 library(magrittr)
 library(dplyr)
 library(tidyr)
+library(rvest)
+
 
 url <- "http://plataforma.saude.gov.br/novocoronavirus/#COVID-19-brazil/"
 page_br <- xml2::read_html(url)
 
-df_br <- page_br %>% rvest::html_node(xpath = '/html/body/div[2]/div[2]/div[6]/div')
-df_br
+df_br <- page_br %>% rvest::html_node(xpath = '/html/body/div[2]')
+df_br %>% html_text()
 
   rvest::html_table(fill = TRUE, trim=T, header=T) %>% 
   filter(row_number() %in% (2:(n()-1)) ) %>% 
