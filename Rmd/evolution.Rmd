@@ -28,6 +28,7 @@ library(ggsci)
 library(countrycode)
 library(readxl)
 library(httr)
+library(lubridate)
 ```
 
 # define helper functions
@@ -69,9 +70,15 @@ cond_select <- conditionally(select)
 # load data 
 
 ```{r load data, message=FALSE, warning=FALSE, include=FALSE}
+
+if (hour(Sys.time()) < 8) {
+  time <- (Sys.Date() - lubridate::days(1)) %>% format("%Y-%m-%d")
+} else {
+  time <- Sys.Date() %>% format("%Y-%m-%d")
+}
 url <- paste("https://www.ecdc.europa.eu/sites/default/files/documents/",
              "COVID-19-geographic-disbtribution-worldwide-",
-             format(Sys.time()-6000, "%Y-%m-%d"), ".xlsx", sep = "")
+             time, ".xlsx", sep = "")
 
 #download the dataset from the website to a local temporary file
 GET(url, authenticate(":", ":", type="ntlm"),
@@ -79,12 +86,11 @@ GET(url, authenticate(":", ":", type="ntlm"),
 
 #read the Dataset sheet into “R”
 df <- read_excel(tf) %>% 
-  rename(Countries_territories=`Countries and territories`, 
-         Date=DateRep, 
-         Daily_Cases=Cases, 
-         Daily_Deaths=Deaths) %>% 
-  arrange(Countries_territories, Date) %>% 
-  select(-c(Year, Day, Month))
+  rename(Countries_territories=countriesAndTerritories, 
+         Date=dateRep, 
+         Daily_Cases=cases, 
+         Daily_Deaths=deaths) %>% 
+  arrange(Countries_territories, Date)
 df$Countries_territories <- df$Countries_territories %>% 
   str_replace_all("_", " ") %>% 
   str_to_lower() %>% 
