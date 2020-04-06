@@ -89,12 +89,10 @@ GET(url, authenticate(":", ":", type="ntlm"),
 
 #read the Dataset sheet into “R”
 df <- read_excel(tf) %>% 
-  rename(Countries_territories=countriesAndTerritories, 
-         Date=dateRep, 
-         Daily_Cases=cases, 
+  rename(Daily_Cases=cases, 
          Daily_Deaths=deaths) %>% 
-  arrange(Countries_territories, Date)
-df$Countries_territories <- df$Countries_territories %>% 
+  arrange(countriesAndTerritories, dateRep)
+df$countriesAndTerritories <- df$countriesAndTerritories %>% 
   str_replace_all("_", " ") %>% 
   str_to_lower() %>% 
   tools::toTitleCase()
@@ -103,22 +101,22 @@ df$Countries_territories <- df$Countries_territories %>%
 # wrangle 
 
 ```{r gen cum, message=FALSE, warning=FALSE}
-df <- df %>% group_by(Countries_territories) %>% 
+df <- df %>% group_by(countriesAndTerritories) %>% 
   mutate(Cum_Cases = cumsum(Daily_Cases), 
          Cum_Deaths = cumsum(Daily_Deaths))
 df <- df %>%
   pivot_longer(cols = c(Daily_Cases, Daily_Deaths, Cum_Cases, Cum_Deaths), 
                names_to = "Category")
 
-df$Countries_territories <- str_replace_all(df$Countries_territories, "_", " ")
+df$countriesAndTerritories <- str_replace_all(df$countriesAndTerritories, "_", " ")
 df <- df %>% mutate(
-  Continent=countrycode(Countries_territories,
+  Continent=countrycode(countriesAndTerritories,
                         origin = "country.name",
                         destination = "continent"),
-  Continent=if_else(Countries_territories=="Kosovo", 
+  Continent=if_else(countriesAndTerritories=="Kosovo", 
                     "Europe", Continent),
-  Continent=if_else(Continent == "Oceania", "Asia", Continent))
-
+  Continent=if_else(Continent == "Oceania", "Asia", Continent),
+  Continent=if_else(is.na(Continent), "Other", Continent))
 ```
 # define plot function 
 
@@ -126,57 +124,80 @@ df <- df %>% mutate(
 gen_df_to_plot <- function(data, filter_location, null_day_threshold, filter_category) {
 
   # gen data to plot
-  df %>% 
-    group_by(Countries_territories) %>% 
+  data %>% 
+    group_by(countriesAndTerritories) %>% 
     filter(Category == filter_category) %>% 
     filter(value >= null_day_threshold) %>% 
     mutate(date_shift=0:(n()-1)/7) %>% # generate date shifted after null_day_threshold
-    ungroup(Countries_territories) %>% 
-    arrange(Continent, Countries_territories, date_shift) %>% 
-    filter(toupper(Countries_territories) %in% toupper(filter_location) | Continent %in% filter_location)
+    ungroup(countriesAndTerritories) %>% 
+    arrange(Continent, countriesAndTerritories, date_shift) %>% 
+    filter(toupper(countriesAndTerritories) %in% toupper(filter_location) | Continent %in% filter_location)
 }
+`%!in%` <- Negate(`%in%`)
 
 gen_plot <- function(data, filter_location,
                      filter_category="Cum_Cases",
                      null_day_threshold=1,
-                     emph_color="red",
+                     emph_color=NULL,
+                     proportional=FALSE,
                      n_col=NULL) {
+  
   
   df_to_plot <- gen_df_to_plot(data = data,
                                filter_location,
                                filter_category,
                                null_day_threshold = null_day_threshold)
   
-  df_to_plot$Countries_territories_bkg <- df_to_plot$Countries_territories
+  
+  df_to_plot$countriesAndTerritories_bkg <- df_to_plot$countriesAndTerritories
   nr_end <- case_when(null_day_threshold %% 10 == 1 ~ "st ", 
                       null_day_threshold %% 10 == 2 ~ "nd ",
                       null_day_threshold %% 10 == 3 ~ "rd ", 
                       TRUE ~ "th ")
   
   # plot descriptions
-  updated_at <- data$Date %>% max() %>% format("%b %d")
+  updated_at <- data$dateRep %>% max() %>% format("%b %d")
   
   gg_category <- ifelse(filter_category=="Cum_Deaths", "death", "case")
-  gg_title <- "Evolution of COVID-19"
-  gg_subtitle <- paste0("Cumulative ", gg_category, "s since ", null_day_threshold, nr_end, gg_category,
-                        " (log scale, updated on ", updated_at, ")") %>%
-    tools::toTitleCase()
+  if (is.null(emph_color)) emph_color <- ifelse(filter_category=="Cum_Deaths", "black", "red")
+  
+  
   gg_x_name <- paste0("Weeks past since ", null_day_threshold, nr_end, gg_category) %>%
     tools::toTitleCase()
   gg_caption <- "Code: github.com/avila/corona. Data: https://www.ecdc.europa.eu"
   
+  
+  if (proportional) {
+    df_to_plot <- df_to_plot %>% mutate(value = value / popData2018 * 1e6)
+    #threshold <- threshold / 1e5
+    y_breaks = 10^(0:9)/1000
+    gg_title <- "Evolution of COVID-19 (proportional to population)"
+    gg_subtitle <- paste0("Cumulative ", gg_category, "s since ", null_day_threshold, nr_end, gg_category,
+                          " (log10 scaled | per million inhabitants | updated ", updated_at, ")") %>%
+      tools::toTitleCase()
+    
+  } else {
+    y_breaks = 10^(0:9)
+    gg_title <- "Evolution of COVID-19 (absolute numbers)" 
+    
+    gg_subtitle <- paste0("Cumulative ", gg_category, "s since ", null_day_threshold, nr_end, gg_category,
+                          " (log10 scaled | updated ", updated_at, ")") %>%
+      tools::toTitleCase()
+
+  }
+
   # plot
   df_to_plot %>% 
-    ggplot(aes(x=date_shift, y=value, group=Countries_territories)) +
-    geom_line(data=df_to_plot[, c("date_shift", "value", "Countries_territories_bkg")],
-              aes(x=date_shift, y=value, group=Countries_territories_bkg), 
+    ggplot(aes(x=date_shift, y=value, group=countriesAndTerritories)) +
+    geom_line(data=df_to_plot[, c("date_shift", "value", "countriesAndTerritories_bkg")],
+              aes(x=date_shift, y=value, group=countriesAndTerritories_bkg), 
               color="grey") +
     geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
-    facet_wrap(~Countries_territories, ncol = n_col) +
+    facet_wrap(~countriesAndTerritories, ncol = n_col) +
     
     #title
     labs(title=gg_title, subtitle=gg_subtitle, caption=gg_caption) +
-    scale_y_log10(labels=fun_dot, breaks = 10^(0:9), minor_breaks=log10_minor_break()) + 
+    scale_y_log10(labels=human_num, breaks = y_breaks, minor_breaks=log10_minor_break()) + 
     scale_x_continuous(name=gg_x_name, breaks=seq(0, 1e3, 1), minor_breaks=1:1e3/7)
 }
 gg_theme <- theme(legend.position = "none",
@@ -184,7 +205,41 @@ gg_theme <- theme(legend.position = "none",
         axis.text=element_text(size=rel(1)),
         plot.title = element_text(size=rel(3)),
         plot.subtitle = element_text(size=rel(2)))
+
 ```
+
+```{r}
+top12 <- df %>% filter(Category == "Cum_Deaths") %>% 
+  arrange(desc(value)) %>% pull(countriesAndTerritories) %>% unique() %>% head(12)
+top12
+```
+
+# plot proportional to population size 
+
+```{r proportional, fig.width=14, fig.height=20, warning=F, message=F}
+
+filter_countries <- c("Brazil", "Germany", "Italy", "South Korea", 
+                      "Spain", "France", "Iran", "Japan", "Singapore",
+                      "India", "United states of america", "United kingdom", 
+                      "Russia", "Chile", "Colombia", "Portugal", "Ecuador", "South Africa" ,
+                      "Belarus", "Sweden", "Netherlands", "Belgium", "Germany", "Switzerland", 
+                      "Turkey" )
+categs <- c("Cum_Deaths", "Cum_Cases")[1:2]
+for (cat in categs) {
+  threshold <- ifelse(cat=="Cum_Cases", 100, 5 )
+  
+  p <- gen_plot(df,
+                filter_location = filter_countries,
+                null_day_threshold = threshold, 
+                filter_category = cat,
+                proportional = F,
+                n_col=4) + 
+    gg_theme + theme(strip.text = element_text(size=16))
+    
+  print(p)
+}
+```
+
 
 # plot for selected countries
 
@@ -224,3 +279,49 @@ for (cat in c("Cum_Cases", "Cum_Deaths")) {
   }
 }
 ```
+
+
+
+```{r}
+human_numbers <- function(x = NULL, smbl ="", signif = 3){
+  humanity <- function(y){
+
+    if (!is.na(y)){
+      tn <- round(abs(y) / 1e12, signif)
+      b <- round(abs(y) / 1e9, signif)
+      m <- round(abs(y) / 1e6, signif)
+      k <- round(abs(y) / 1e3, signif)
+      
+      if ( y >= 0 ){
+        y_is_positive <- ""
+      } else {
+        y_is_positive <- "-"
+      }
+      
+      if ( k < 1 ) {
+        paste0( y_is_positive, smbl, round(abs(y), signif ))
+      } else if ( m < 1){
+        paste0 (y_is_positive, smbl,  k , "k")
+      } else if (b < 1){
+        paste0 (y_is_positive, smbl, m ,"m")
+      }else if(tn < 1){
+        paste0 (y_is_positive, smbl, b ,"bn")
+      } else {
+        paste0 (y_is_positive, smbl,  comma(tn), "tn")
+      }
+    } else if (is.na(y) | is.null(y)){
+      "-"
+    }
+  }
+  
+  sapply(x,humanity)
+}
+
+#' Human versions of large currency numbers - extensible via smbl
+
+human_gbp   <- function(x){human_numbers(x, smbl = "£")}
+human_usd   <- function(x){human_numbers(x, smbl = "$")}
+human_euro  <- function(x){human_numbers(x, smbl = "€")} 
+human_num   <- function(x){human_numbers(x, smbl = "")} 
+```
+

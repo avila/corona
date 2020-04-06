@@ -1,0 +1,56 @@
+---
+title: "comparison_proportional_convid19"
+author: "Marcelo Avila"
+date: "4/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggsci)
+library(countrycode)
+library(readxl)
+library(httr)
+library(lubridate)
+```
+
+
+
+
+```{r def functions}
+
+```
+
+```{r, fig.width=16, fig.height=20}
+```
+
+```{r, fig.width=16, fig.height=16}
+th = 0.01
+df_pop <- left_join(df, pop_data, by = c("countriesAndTerritories"="name"))
+
+category <- "Cum_Deaths"
+df_pop %>% mutate(pop_value = value / pop2020 * 1e5) %>%
+  filter(Category==category) %>% 
+  group_by(countriesAndTerritories) %>% 
+  filter(if_else(pop_value>=th, TRUE, FALSE)) %>% 
+  group_by(countriesAndTerritories) %>% 
+  mutate(date = ave(1:length(countriesAndTerritories), df$countriesAndTerritories, FUN = seq_along)) %>% 
+  ungroup(countriesAndTerritories) %>% arrange(date) %>% 
+  #filter(countriesAndTerritories %in% selected_countries) %>% 
+  mutate(countriesAndTerritories=fct_reorder2(countriesAndTerritories, date, pop_value)) %>% 
+  
+  filter(countriesAndTerritories %!in% c("International",  "World")) %>% 
+  group_by(countriesAndTerritories) %>% 
+  mutate(label = ifelse(date == max(date),
+                        as.character(countriesAndTerritories), 
+                        NA_character_)) %>% 
+  ggplot(aes(x=date, y=pop_value)) + 
+  geom_point() + geom_line() + theme(legend.position = "none") +
+  ggtitle("Fatalities by 100.000 inhabitants") +
+  facet_wrap(~countriesAndTerritories)
+```
+
