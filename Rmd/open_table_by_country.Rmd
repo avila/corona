@@ -1,12 +1,7 @@
 ---
 title: "Effect of COVID-19 pandemic on the Restaurant Industry"
 author: "Marcelo Avila"
-date: "21/03/2020"
-output:
-  html_document: 
-    number_sections: yes
-    toc: yes
-    code_folding: hide
+date: '2020-03-25'
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +23,7 @@ library(tidyverse)
 
 ```{r, fig.width=8, fig.height=8, warning=FALSE, message=FALSE}
 # data needs to be downloaded by hand from https://www.opentable.com/state-of-industry
-df_ot <- read_csv("./data/state_of_industry_data.csv") %>%
+df_ot <- read_csv("../../data/state_of_industry_data.csv") %>%
   pivot_longer( -c(Type, Name), names_to = "Date", values_to = "Value") %>% 
   mutate(Date = as.Date(Date, format="%m/%d"))
 
@@ -79,7 +74,7 @@ plot <- df_ot %>% filter(Group == 2) %>%
   
   labs(title = "Effect on Reastaurant Reservations by Cities",
        subtitle = paste0("Year-over-year Percentage Change (Updated on : ", updated_on, ")"), 
-       caption = "Data source: https://www.opentable.com/state-of-industry") +
+       caption = "Code: github.com/avila/corona | Data: https://www.opentable.com/state-of-industry") +
   geom_text(aes(label = Value), nudge_y=-13, nudge_x = -1/3, size=2.3) +
   facet_wrap(~Name, ncol=4) +
   theme(strip.background = element_blank(), strip.placement = "outside")
