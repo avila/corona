@@ -89,10 +89,11 @@ GET(url, authenticate(":", ":", type="ntlm"),
 
 #read the Dataset sheet into “R”
 df <- read_excel(tf) %>% 
-  rename(Daily_Cases=cases, 
-         Daily_Deaths=deaths) %>% 
-  arrange(countriesAndTerritories, dateRep)
-df$countriesAndTerritories <- df$countriesAndTerritories %>% 
+  rename(Daily_Cases = cases, 
+         Daily_Deaths = deaths,
+         Location = countriesAndTerritories) %>% 
+  arrange(Location, dateRep)
+df$Location <- df$Location %>% 
   str_replace_all("_", " ") %>% 
   str_to_lower() %>% 
   tools::toTitleCase()
@@ -101,19 +102,19 @@ df$countriesAndTerritories <- df$countriesAndTerritories %>%
 # wrangle 
 
 ```{r gen cum, message=FALSE, warning=FALSE}
-df <- df %>% group_by(countriesAndTerritories) %>% 
+df <- df %>% group_by(Location) %>% 
   mutate(Cum_Cases = cumsum(Daily_Cases), 
          Cum_Deaths = cumsum(Daily_Deaths))
 df <- df %>%
   pivot_longer(cols = c(Daily_Cases, Daily_Deaths, Cum_Cases, Cum_Deaths), 
                names_to = "Category")
 
-df$countriesAndTerritories <- str_replace_all(df$countriesAndTerritories, "_", " ")
+df$Location <- str_replace_all(df$Location, "_", " ")
 df <- df %>% mutate(
-  Continent=countrycode(countriesAndTerritories,
+  Continent=countrycode(Location,
                         origin = "country.name",
                         destination = "continent"),
-  Continent=if_else(countriesAndTerritories=="Kosovo", 
+  Continent=if_else(Location=="Kosovo", 
                     "Europe", Continent),
   Continent=if_else(Continent == "Oceania", "Asia", Continent),
   Continent=if_else(is.na(Continent), "Other", Continent))
@@ -125,13 +126,15 @@ gen_df_to_plot <- function(data, filter_location, null_day_threshold, filter_cat
 
   # gen data to plot
   data %>% 
-    group_by(countriesAndTerritories) %>% 
+    group_by(Location) %>% 
     filter(Category == filter_category) %>% 
     filter(value >= null_day_threshold) %>% 
     mutate(date_shift=0:(n()-1)/7) %>% # generate date shifted after null_day_threshold
-    ungroup(countriesAndTerritories) %>% 
-    arrange(Continent, countriesAndTerritories, date_shift) %>% 
-    filter(toupper(countriesAndTerritories) %in% toupper(filter_location) | Continent %in% filter_location)
+    ungroup(Location) %>% 
+    arrange(Location, date_shift) %>% 
+    filter(toupper(Location) %in% toupper(filter_location))
+    # arrange(Continent, Location, date_shift) %>% 
+    # filter(toupper(Location) %in% toupper(filter_location) | Continent %in% filter_location)
 }
 `%!in%` <- Negate(`%in%`)
 
@@ -149,7 +152,7 @@ gen_plot <- function(data, filter_location,
                                null_day_threshold = null_day_threshold)
   
   
-  df_to_plot$countriesAndTerritories_bkg <- df_to_plot$countriesAndTerritories
+  df_to_plot$Location_bkg <- df_to_plot$Location
   nr_end <- case_when(null_day_threshold %% 10 == 1 ~ "st ", 
                       null_day_threshold %% 10 == 2 ~ "nd ",
                       null_day_threshold %% 10 == 3 ~ "rd ", 
@@ -188,12 +191,12 @@ gen_plot <- function(data, filter_location,
 
   # plot
   df_to_plot %>% 
-    ggplot(aes(x=date_shift, y=value, group=countriesAndTerritories)) +
-    geom_line(data=df_to_plot[, c("date_shift", "value", "countriesAndTerritories_bkg")],
-              aes(x=date_shift, y=value, group=countriesAndTerritories_bkg), 
+    ggplot(aes(x=date_shift, y=value, group=Location)) +
+    geom_line(data=df_to_plot[, c("date_shift", "value", "Location_bkg")],
+              aes(x=date_shift, y=value, group=Location_bkg), 
               color="grey") +
     geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
-    facet_wrap(~countriesAndTerritories, ncol = n_col) +
+    facet_wrap(~Location, ncol = n_col) +
     
     #title
     labs(title=gg_title, subtitle=gg_subtitle, caption=gg_caption) +
@@ -210,7 +213,7 @@ gg_theme <- theme(legend.position = "none",
 
 ```{r}
 top12 <- df %>% filter(Category == "Cum_Deaths") %>% 
-  arrange(desc(value)) %>% pull(countriesAndTerritories) %>% unique() %>% head(12)
+  arrange(desc(value)) %>% pull(Location) %>% unique() %>% head(12)
 top12
 ```
 
@@ -223,7 +226,7 @@ filter_countries <- c("Brazil", "Germany", "Italy", "South Korea",
                       "India", "United states of america", "United kingdom", 
                       "Russia", "Chile", "Colombia", "Portugal", "Ecuador", "South Africa" ,
                       "Belarus", "Sweden", "Netherlands", "Belgium", "Germany", "Switzerland", 
-                      "Turkey" )
+                      "Turkey" )[1]
 categs <- c("Cum_Deaths", "Cum_Cases")[1:2]
 for (cat in categs) {
   threshold <- ifelse(cat=="Cum_Cases", 100, 5 )
