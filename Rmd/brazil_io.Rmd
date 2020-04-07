@@ -101,24 +101,28 @@ cond_select <- conditionally(select)
 
 # negate in
 `%!in%` <- Negate(`%in%`)
-
 ```
+
+
 
 ```{r read data from api or automatically}
 l <- list()
 page_size <- 10000
 url <- paste0("https://brasil.io/api/dataset/covid19/caso/data?page_size=", page_size)
-for (i in 1:10) {
+pages <- 20
+for (i in 1:pages) {
   br_io_json <- jsonlite::fromJSON(url)
   l[[i]] <- br_io_json$results
-  url <- br_io_json$`next`
   cat(i, "\n")
   cat(url, "\n")
+  url <- br_io_json$`next`
   if(is.null(url)) break
 }
-```
-```{r}
+
 df <- l %>% purrr::reduce(rbind) %>% unique()
+if (nrow(df)==(page_size * pages)) {
+  stop("Raise number of pages because the data probably got a bit bigger")
+}
 #rm(l)
 ```
 
@@ -132,23 +136,6 @@ df_br <- df %>%  mutate(date = lubridate::date(date)) %>%
   select(date, state, city, Category, value, everything())
 rm(df)
 ```
-
-
-
-```{r read data, eval=FALSE, include=FALSE}
-(df_br <- read_csv("../data/brazil/covid19-481c1e0ed3e946f3b8bb825703e5c52e.csv", 
-    col_types = cols(city_ibge_code = col_character(), 
-        confirmed = col_integer(), date = col_date(format = "%Y-%m-%d"), 
-        deaths = col_integer(), estimated_population_2019 = col_integer())) %>% 
-  arrange(state, city, date) %>% 
-  rename(Cum_Cases = confirmed, 
-         Cum_Deaths = deaths) %>% 
-  pivot_longer(cols = c(Cum_Cases, Cum_Deaths), 
-               names_to = "Category") %>% 
-  select(date, state, city, Category, value, everything()))
-```
-
-
 
 ```{r gen_df_to_plot}
 gen_df_to_plot <- function(data,
@@ -185,10 +172,9 @@ gen_df_to_plot <- function(data,
   return(data)
 }
 #debugonce(gen_df_to_plot)
-gen_df_to_plot(df_br, filter_city = "Rio de Janeiro")
-gen_df_to_plot(df_br, filter_state =  c("SP", "RJ"))
+#gen_df_to_plot(df_br, filter_city = "Rio de Janeiro")
+#gen_df_to_plot(df_br, filter_state =  c("SP", "RJ"))
 ```
-
 ```{r genplot function}
 
 gen_plot <- function(data, filter_state=NULL,
@@ -258,6 +244,7 @@ gg_theme <- theme(legend.position = "none",
         plot.subtitle = element_text(size=rel(1.5)))
 
 ```
+
 
 ```{r fig.height=16, fig.width=10}
 top12_state <- df_br %>% 
