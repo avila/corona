@@ -21,6 +21,7 @@ options(scipen = 999)
 
 ```{r libray}
 library(tidyverse)
+#library(lubridate)
 ```
 
 ```{r functions}
@@ -103,7 +104,38 @@ cond_select <- conditionally(select)
 
 ```
 
-```{r read data}
+```{r read data from api or automatically}
+l <- list()
+page_size <- 10000
+url <- paste0("https://brasil.io/api/dataset/covid19/caso/data?page_size=", page_size)
+for (i in 1:10) {
+  br_io_json <- jsonlite::fromJSON(url)
+  l[[i]] <- br_io_json$results
+  url <- br_io_json$`next`
+  cat(i, "\n")
+  cat(url, "\n")
+  if(is.null(url)) break
+}
+```
+```{r}
+df <- l %>% purrr::reduce(rbind) %>% unique()
+#rm(l)
+```
+
+```{r change types}
+df_br <- df %>%  mutate(date = lubridate::date(date)) %>% 
+  arrange(state, city, date) %>% 
+  rename(Cum_Cases = confirmed, 
+         Cum_Deaths = deaths) %>% 
+  pivot_longer(cols = c(Cum_Cases, Cum_Deaths), 
+               names_to = "Category") %>% 
+  select(date, state, city, Category, value, everything())
+rm(df)
+```
+
+
+
+```{r read data, eval=FALSE, include=FALSE}
 (df_br <- read_csv("../data/brazil/covid19-481c1e0ed3e946f3b8bb825703e5c52e.csv", 
     col_types = cols(city_ibge_code = col_character(), 
         confirmed = col_integer(), date = col_date(format = "%Y-%m-%d"), 
@@ -116,50 +148,7 @@ cond_select <- conditionally(select)
   select(date, state, city, Category, value, everything()))
 ```
 
-```{r figures, fig.height=16, fig.width=12}
-# gen data to plot
-filter_category <- c("Cum_Cases", "Cum_Deaths")[2]
-null_day_threshold <- 1
 
-filter_location <- c("SP", "RJ")
-df_to_plot <- df_br %>% rename(Location=state) %>% 
-  group_by(Location) %>% 
-  filter(
-    place_type == "state",
-    Category == filter_category,
-    value >= null_day_threshold) %>% 
-  mutate(date_shift=0:(n()-1)/1) %>% # generate date shifted after null_day_threshold
-  ungroup(Location) %>% 
-  arrange(Location, date_shift)
-
-df_to_plot$Location_bkg <- df_to_plot$Location
-
-  
-emph_color <- "red" 
-y_breaks <- 10^(0:9)
-n_col <- 3
-p <- df_to_plot %>% 
-  ggplot(aes(x=date_shift, y=value, group=Location)) +
-  geom_line(data=df_to_plot[, c("date_shift", "value", "Location_bkg")],
-            aes(x=date_shift, y=value, group=Location_bkg), 
-            color="grey") +
-  geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
-  facet_wrap(~Location, ncol = n_col)
-
-```
-
-
-```{r}
-gg_title      <- "Evolução do COVID-19 por Estados Brasileiros (números absolutos)"
-gg_subtitle   <- ""
-gg_caption    <- "Código: github.com/avila/corona/Rmd/brazil_io.Rmd. Fonte: https://brasil.io/dataset/covid19/caso"
-gg_x_name     <- "Cumulativo casos confirmados | "
-
-p + #title
-  labs(title=gg_title, subtitle=gg_subtitle, caption=gg_caption) +
-  scale_y_log10(labels=human_num, breaks = y_breaks, minor_breaks=log10_minor_break()) +
-  scale_x_continuous(name=gg_x_name, breaks=seq(0, 1e3, 1), minor_breaks=1:1e3/7)
-```
 
 ```{r gen_df_to_plot}
 gen_df_to_plot <- function(data,
@@ -239,14 +228,14 @@ gen_plot <- function(data, filter_state=NULL,
     y_breaks = 10^(0:9)/10000
     gg_title <- "Evolução do COVID-19 (números relativos)" 
     gg_subtitle <- paste0("Cumulativ", artigo, "s ",  gg_category, "s desde ", null_day_threshold, nr_end, " ", gg_category,
-                          " (escala log10 | por 100k habitantes | atualizado ", updated_at, ")")
+                          " (escala em log, por 100k habitantes,  atualizado ", updated_at, ")")
     
   } else {
     y_breaks = 10^(0:9)
     gg_title <- "Evolução do COVID-19 (números absolutos)" 
     
     gg_subtitle <- paste0("Cumulativ", artigo, "s ",  gg_category, "s desde ", null_day_threshold, nr_end, " ", gg_category,
-                          " (escala log10 | atualizado ", updated_at, ")")
+                          " (escala em log, atualizado ", updated_at, ")")
   }
 
   # plot
@@ -265,12 +254,12 @@ gen_plot <- function(data, filter_state=NULL,
 gg_theme <- theme(legend.position = "none",
         axis.title.y = element_blank(),
         axis.text=element_text(size=rel(1)),
-        plot.title = element_text(size=rel(3)),
-        plot.subtitle = element_text(size=rel(2)))
+        plot.title = element_text(size=rel(2)),
+        plot.subtitle = element_text(size=rel(1.5)))
 
 ```
 
-```{r fig.height=10, fig.width=10}
+```{r fig.height=16, fig.width=10}
 top12_state <- df_br %>% 
   arrange(desc(value)) %>% 
   filter(place_type=="state", 
@@ -280,26 +269,48 @@ top12_state <- df_br %>%
 
 #debugonce(gen_plot)
 gen_plot(df_br,
-         filter_state = top12_state,
-         filter_category = c("Cum_Deaths", "Cum_Cases")[2], 
-         n_col = 4,proportional = T,
+         #filter_state = c(top12_state),
+         filter_state = TRUE,
+         
+         filter_category = c("Cum_Deaths", "Cum_Cases")[1], 
+         n_col = 4,proportional = T
          #null_day_threshold = 1
          ) + gg_theme 
 
 ```
 
 ```{r fig.height=10, fig.width=10}
-(top12_city <- df_br %>% 
+top12_city <- df_br %>% 
   arrange(desc(value)) %>% 
   filter(place_type=="city", 
          Category == "Cum_Deaths") %>% 
-  select(city) %>% pull() %>% unique() %>% head(12))
+  select(city) %>% pull() %>% unique() %>% head(12)
 gen_plot(df_br,
          #filter_state = "SP",
          filter_city = top12_city,
          filter_category = c("Cum_Deaths", "Cum_Cases")[2], 
          n_col = 4, 
          null_day_threshold = 1
+         ) + gg_theme 
+
+```
+
+```{r fig.height=20}
+cat <- c("Cum_Deaths", "Cum_Cases")[2]
+sel_cities <- df_br %>% 
+  filter(Category == cat) %>% 
+  # filter(state=="RJ") %>% 
+  arrange(desc(value)) %>% 
+  filter(place_type=="city", 
+         city!="Importados/Indefinidos") %>%
+  select(city) %>% pull() %>% unique() %>% head(40)
+
+gen_plot(df_br,
+         #filter_state = "SP",
+         filter_city = sel_cities,
+         filter_category = cat, 
+         n_col = 4, 
+         null_day_threshold = 3
          ) + gg_theme 
 
 ```
