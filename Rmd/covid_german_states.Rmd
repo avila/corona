@@ -1,0 +1,229 @@
+---
+title: "Untitled"
+author: "Marcelo Avila"
+date: "4/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      fig.height = 12,
+                      fig.width = 12)
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+```{r}
+germany_iso_codes <- 'state, german, english
+                      DE-BW, Baden-Württemberg, Baden-Württemberg
+                      DE-BY, Bayern, Bavaria
+                      DE-BE, Berlin, Berlin
+                      DE-BB, Brandenburg, Brandenburg
+                      DE-HB, Bremen, Bremen
+                      DE-HH, Hamburg, Hamburg
+                      DE-HE, Hessen, Hesse
+                      DE-MV, Mecklenburg-Vorpommern, Mecklenburg-Western Pomerania
+                      DE-NI, Niedersachsen, Lower Saxony
+                      DE-NW, Nordrhein-Westfalen, North Rhine-Westphalia
+                      DE-RP, Rheinland-Pfalz, Rhineland-Palatinate
+                      DE-SL, Saarland, Saarland
+                      DE-SN, Sachsen, Saxony
+                      DE-ST, Sachsen-Anhalt, Saxony-Anhalt
+                      DE-SH, Schleswig-Holstein, Schleswig-Holstein
+                      DE-TH, Thüringen, Thuringia'
+df_iso <- read_csv(germany_iso_codes)
+```
+
+
+```{r readcsv, message=FALSE, warning=FALSE}
+rki_by_state_cases <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/cases-rki-by-state.csv"
+rki_by_state_deaths <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/deaths-rki-by-state.csv"
+
+
+df_state_cases <- read_csv(rki_by_state_cases) %>%
+  pivot_longer(-time_iso8601, names_to = "state", values_to = "value") %>% 
+  filter(state != "sum_cases") %>% 
+  group_by(state) %>% 
+  arrange(state, time_iso8601) %>% 
+  mutate(daily = value-lag(value),
+         variable="cases") %>% 
+  pivot_longer(c(value, daily))
+df_state_deaths <- read_csv(rki_by_state_deaths) %>%
+  pivot_longer(-time_iso8601, names_to = "state", values_to = "value") %>% 
+  filter(state != "sum_deaths") %>% 
+  group_by(state) %>% 
+  mutate(daily = value-lag(value),
+         variable="deaths") %>% 
+  pivot_longer(c(value, daily))
+
+(df_merged <- rbind(df_state_cases, df_state_deaths) %>%
+    arrange(state, time_iso8601) %>% 
+    left_join(df_iso) %>% 
+    rename(time=time_iso8601) %>%
+    mutate(name=case_when(
+      name == "value" ~ "cumulative",
+      name == "daily" ~ "daily")) %>% 
+    rename(type=name))
+rm(df_state_cases, df_state_deaths)
+```
+
+```{r helper functions}
+human_numbers <- function(x = NULL, smbl ="", signif = 3){
+  humanity <- function(y){
+
+    if (!is.na(y)){
+      tn <- round(abs(y) / 1e12, signif)
+      b <- round(abs(y) / 1e9, signif)
+      m <- round(abs(y) / 1e6, signif)
+      k <- round(abs(y) / 1e3, signif)
+      
+      if ( y >= 0 ){
+        y_is_positive <- ""
+      } else {
+        y_is_positive <- "-"
+      }
+      
+      if ( k < 1 ) {
+        paste0( y_is_positive, smbl, round(abs(y), signif ))
+      } else if ( m < 1){
+        paste0 (y_is_positive, smbl,  k , "k")
+      } else if (b < 1){
+        paste0 (y_is_positive, smbl, m ,"m")
+      }else if(tn < 1){
+        paste0 (y_is_positive, smbl, b ,"bn")
+      } else {
+        paste0 (y_is_positive, smbl,  comma(tn), "tn")
+      }
+    } else if (is.na(y) | is.null(y)){
+      "-"
+    }
+  }
+  
+  sapply(x,humanity)
+}
+
+#' Human versions of large currency numbers - extensible via smbl
+
+human_gbp   <- function(x){human_numbers(x, smbl = "£")}
+human_usd   <- function(x){human_numbers(x, smbl = "$")}
+human_euro  <- function(x){human_numbers(x, smbl = "€")} 
+human_num   <- function(x){human_numbers(x, smbl = "")} 
+
+
+fun_dot <- function(x) format(x, big.mark = " ",
+                              scientific = FALSE,
+                              decimal.mark = ".")
+
+# negative in
+`%!in%` <- Negate(`%in%`)
+
+# y scale
+log10_minor_break = function (...){
+  function(x) {
+    minx         = floor(min(log10(x), na.rm=T))-1;
+    maxx         = ceiling(max(log10(x), na.rm=T))+1;
+    n_major      = maxx-minx+1;
+    major_breaks = seq(minx, maxx, by=1)
+    minor_breaks = 
+      rep(log10(seq(1, 9, by=1)), times = n_major)+
+      rep(major_breaks, each = 9)
+    return(10^(minor_breaks))
+  }
+}
+
+# for conditionaly filtering
+# (from: https://github.com/tidyverse/magrittr/issues/109#issuecomment-371999796)
+conditionally <- function(fun){
+    function(first_arg, ..., execute){
+        if(execute) return(fun(first_arg, ...))
+        else return(first_arg)
+    }
+}
+cond_filter <- conditionally(filter)
+cond_select <- conditionally(select)
+
+```
+
+```{r gg helper functions}
+singular <- function(txt)  substr(txt,1,nchar(txt)-1)
+
+gg_theme  <- function() {
+  theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text=element_text(size=rel(1)),
+        plot.title = element_text(size=rel(2)),
+        plot.subtitle = element_text(size=rel(1.5)))
+} 
+
+gg_y_axis <- function() {
+  scale_y_log10(breaks=10^(0:9), labels=human_num,
+                minor_breaks=log10_minor_break())
+}
+gg_x_axis <- function() {
+  scale_x_continuous(
+  name = paste0("Weeks past since ", null_day_threshold, nr_end, singular(variable)),
+  breaks=seq(0, 1e3, 1), minor_breaks=1:1e3/7)
+}
+
+updated_at <- format(max(df_merged$time), "%b %d")
+
+gen_subtittle <- function() {
+  nr_end <- case_when(null_day_threshold %% 10 == 1 ~ "st ", 
+                      null_day_threshold %% 10 == 2 ~ "nd ",
+                      null_day_threshold %% 10 == 3 ~ "rd ", 
+                      TRUE ~ "th ")
+  paste0("Cumulative ", variable, " since ", null_day_threshold, nr_end, singular(variable),
+                          " (log10 scaled, updated ", updated_at, ")")
+}
+
+
+gg_labels <- function() {
+  labs(title="Evolution of COVID-19 in Germany",
+       subtitle=gen_subtittle(),
+       caption="\nCode: github.com/avila/corona. Data: RKI, gathered by github.com/jgehrcke/") 
+}
+```
+
+
+```{r gen_df_to_plot}
+gen_df_to_plot <- function(data,
+                           filter_variable=NULL,
+                           filter_type=NULL,
+                           null_day_threshold=50) {
+  
+  data %>% 
+    group_by(state) %>% 
+    filter(variable==filter_variable,
+           type==filter_type) %>% 
+    filter(value >= null_day_threshold) %>% 
+    mutate(date_shift=0:(n()-1)/7) %>% 
+    arrange(state, date_shift) %>% 
+    mutate(location_bkg = state) 
+}
+
+```
+
+```{r gen_df_to_plot, fig.width=10, fig.height=10, warning=FALSE}
+
+
+n_col = 4
+variable <- c("cases", "deaths")[1]
+type <- "cumulative"
+#null_day_threshold <- 50
+null_day_threshold <- ifelse(variable=="cases", 50, 5)
+emph_color <- ifelse(variable=="cases", "red", "black")
+gen_df_to_plot(df_merged, filter_variable = variable,
+               filter_type = type, 
+               null_day_threshold = null_day_threshold) %>%
+  rename(location=english) %>% 
+  # plot
+  ggplot(aes(x=date_shift, y=value, group=location)) +
+  geom_line(data=function(x) { select(x, date_shift, value, location_bkg) },
+            aes(x=date_shift, y=value, group=location_bkg), 
+            color="grey") +
+  geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
+  facet_wrap(~location, ncol = n_col) + 
+  gg_y_axis() + gg_x_axis() + gg_theme() + gg_labels()
+```
+
