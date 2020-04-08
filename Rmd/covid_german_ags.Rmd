@@ -1,71 +1,52 @@
 ---
-title: "Covid Evolution by German States"
+title: "Covid Evolution by AGS"
 author: "Marcelo Avila"
-date: "4/7/2020"
+date: "4/8/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, 
-                      fig.height = 12,
-                      fig.width = 12)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, message=FALSE, warning=FALSE}
-library(tidyverse)
-```
-```{r}
-germany_iso_codes <- 'state, german, english
-                      DE-BW, Baden-Württemberg, Baden-Württemberg
-                      DE-BY, Bayern, Bavaria
-                      DE-BE, Berlin, Berlin
-                      DE-BB, Brandenburg, Brandenburg
-                      DE-HB, Bremen, Bremen
-                      DE-HH, Hamburg, Hamburg
-                      DE-HE, Hessen, Hesse
-                      DE-MV, Mecklenburg-Vorpommern, Mecklenburg-Western Pomerania
-                      DE-NI, Niedersachsen, Lower Saxony
-                      DE-NW, Nordrhein-Westfalen, North Rhine-Westphalia
-                      DE-RP, Rheinland-Pfalz, Rhineland-Palatinate
-                      DE-SL, Saarland, Saarland
-                      DE-SN, Sachsen, Saxony
-                      DE-ST, Sachsen-Anhalt, Saxony-Anhalt
-                      DE-SH, Schleswig-Holstein, Schleswig-Holstein
-                      DE-TH, Thüringen, Thuringia'
-df_iso <- read_csv(germany_iso_codes)
+```{r, warning=FALSE, message=FALSE}
+ags <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/ags.json"
+ags_json <- jsonlite::fromJSON(ags)
+(df_ags <- map_dfr(ags_json, as.data.frame, .id = "ags") %>% 
+  rename(ags_name=name))
 ```
 
 
 ```{r readcsv, message=FALSE, warning=FALSE}
-rki_by_state_cases <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/cases-rki-by-state.csv"
-rki_by_state_deaths <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/deaths-rki-by-state.csv"
+rki_by_ags_cases <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/cases-rki-by-ags.csv"
+rki_by_ags_deaths <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/deaths-rki-by-ags.csv"
 
-df_state_cases <- read_csv(rki_by_state_cases) %>%
-  pivot_longer(-time_iso8601, names_to = "state", values_to = "value") %>% 
-  filter(state != "sum_cases") %>% 
-  group_by(state) %>% 
-  arrange(state, time_iso8601) %>% 
+df_ags_cases <- read_csv(rki_by_ags_cases) %>%
+  pivot_longer(-time_iso8601, names_to = "ags", values_to = "value") %>% 
+  filter(ags != "sum_cases") %>% 
+  group_by(ags) %>% 
+  arrange(ags, time_iso8601) %>% 
   mutate(daily = value-lag(value),
          variable="cases") %>% 
   pivot_longer(c(value, daily))
 
-df_state_deaths <- read_csv(rki_by_state_deaths) %>%
-  pivot_longer(-time_iso8601, names_to = "state", values_to = "value") %>% 
-  filter(state != "sum_deaths") %>% 
-  group_by(state) %>% 
+df_ags_deaths <- read_csv(rki_by_ags_deaths) %>%
+  pivot_longer(-time_iso8601, names_to = "ags", values_to = "value") %>% 
+  filter(ags != "sum_deaths") %>% 
+  group_by(ags) %>% 
   mutate(daily = value-lag(value),
          variable="deaths") %>% 
   pivot_longer(c(value, daily))
 
-(df_merged <- rbind(df_state_cases, df_state_deaths) %>%
-    arrange(state, time_iso8601) %>% 
-    left_join(df_iso) %>% 
+(df_merged <- rbind(df_ags_cases, df_ags_deaths) %>%
+    arrange(ags, time_iso8601) %>% 
+    left_join(df_ags) %>% 
     rename(time=time_iso8601) %>%
     mutate(name=case_when(
       name == "value" ~ "cumulative",
       name == "daily" ~ "daily")) %>% 
     rename(type=name))
-rm(df_state_cases, df_state_deaths)
+rm(rki_by_ags_cases, rki_by_ags_deaths)
 ```
 
 ```{r helper functions}
@@ -194,37 +175,29 @@ gg_labels <- function() {
 gen_df_to_plot <- function(data,
                            filter_variable=NULL,
                            filter_type=NULL,
-                           null_day_threshold=50) {
+                           null_day_threshold=1,
+                           group_by_var) {
   
+  group_by_var <- enquo(group_by_var)
   data %>% 
-    group_by(state) %>% 
+    group_by(!!group_by_var) %>% 
     filter(variable==filter_variable,
            type==filter_type) %>% 
     filter(value >= null_day_threshold) %>% 
     mutate(date_shift=0:(n()-1)/7) %>% 
-    arrange(state, date_shift) %>% 
-    mutate(location_bkg = state) 
+    arrange(!!group_by_var, date_shift) %>% 
+    mutate(location_bkg = !!group_by_var) 
 }
-
+df_to_plot <- gen_df_to_plot(df_merged, filter_variable = "cases", filter_type = "cumulative", 
+                             group_by_var = ags, null_day_threshold = 3)
 ```
 
-```{r gen_df_to_plot, fig.width=10, fig.height=10, warning=FALSE}
-n_col = 4
-
-for (variable in c("cases", "deaths")) {
-  
-  type <- c("cumulative", "daily")[1]
-  
-  #null_day_threshold <- 50
-  null_day_threshold <- ifelse(variable=="cases", 50, 5)
-  emph_color <- ifelse(variable=="cases", "red", "black")
-  
-  # gen data and plot
-  p <- gen_df_to_plot(df_merged, filter_variable = variable,
-                 filter_type = type, 
-                 null_day_threshold = null_day_threshold) %>%
-    rename(location=english) %>% 
-    # plot
+```{r fig.height=16, fig.width=10}
+states <- df_merged$state %>% unique()
+for (state_i in states[1:3]) {
+  p <- df_to_plot %>% rename(location=ags_name) %>% 
+    filter(state==state_i) %>% 
+    
     ggplot(aes(x=date_shift, y=value, group=location)) +
     geom_line(data=function(x) { select(x, date_shift, value, location_bkg) },
               aes(x=date_shift, y=value, group=location_bkg), 
@@ -236,34 +209,81 @@ for (variable in c("cases", "deaths")) {
 }
 ```
 
-```{r, message=FALSE, warning=FALSE}
-n_col = 4
+```{r gen_df_to_plot cum , fig.width=10, fig.height=20, warning=FALSE}
+n <- 16 * 2
+ags_selection <- ungroup(df_merged) %>% filter(variable=="deaths") %>% 
+  arrange(desc(value)) %>% select(ags_name, state, variable) %>% unique() %>% head(n) %>% pull(ags_name)
+df_merged <- df_merged %>% arrange(desc(value)) %>% 
+  mutate(ags_name=factor(ags_name, levels = unique(ags_name)))
 
 for (variable in c("cases", "deaths")) {
   
-  type <- c("cumulative", "daily")[2]
+  type <- c("cumulative", "daily")[1]
   
   null_day_threshold <- ifelse(type=="daily", 0, ifelse(
     variable=="cases", 25, 1)
   )
   
   emph_color <- ifelse(variable=="cases", "red", "black")
+  
+  p <- gen_df_to_plot(df_merged, filter_variable = variable, filter_type = type, 
+                      group_by_var = ags, null_day_threshold = null_day_threshold) %>% 
+    ungroup() %>% 
+    rename(location=ags_name) %>% 
+    filter(location %in% ags_selection) %>% 
+    arrange(desc(value)) %>% 
+    mutate(location=factor(location, levels = unique(location))) %>% 
+    
+    ggplot(aes(x=date_shift, y=value, group=location)) +
+    geom_line(data=function(x) { select(x, date_shift, value, location_bkg) },
+              aes(x=date_shift, y=value, group=location_bkg), 
+              color="grey") +
+    geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
+    facet_wrap(~location, ncol = n_col) +
+    gg_y_axis() + gg_x_axis() + gg_theme() + gg_labels()
+  print(p)
+}
+```
 
-  gen_df_to_plot(df_merged, filter_variable = variable,
-                 filter_type = type, 
-                 null_day_threshold = null_day_threshold) %>%
-    rename(location=english) %>% 
-    mutate(time=(time)) %>% 
-    # plot
+
+```{r gen_df_to_plot daily, fig.width=10, fig.height=20, warning=FALSE}
+n <- 16 * 2
+
+
+
+ags_selection <- ungroup(df_merged) %>% filter(variable=="deaths") %>% 
+  arrange(desc(value)) %>% select(ags_name, state, variable) %>% unique() %>% head(n) %>% pull(ags_name)
+df_merged <- df_merged %>% arrange(desc(value)) %>% 
+  mutate(ags_name=factor(ags_name, levels = unique(ags_name)))
+
+for (variable in c("cases", "deaths")) {
+  
+  type <- c("cumulative", "daily")[2]  
+  null_day_threshold <- ifelse(type=="daily", 0, ifelse(
+    variable=="cases", 25, 1)
+  )
+  
+  emph_color <- ifelse(variable=="cases", "red", "black")
+  
+  p <- gen_df_to_plot(df_merged, filter_variable = variable, filter_type = type, 
+                      group_by_var = ags, null_day_threshold = null_day_threshold) %>% 
+    ungroup() %>% 
+    rename(location=ags_name) %>% 
+    filter(location %in% ags_selection) %>% 
+    arrange(desc(value)) %>% 
+    mutate(location=factor(location, levels = unique(location))) %>% 
+    
     ggplot(aes(x=time, y=value, group=location)) +
     geom_line(data=function(x) { select(x, time, value, location_bkg) },
               aes(x=time, y=value, group=location_bkg), 
               color="grey") +
     geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
-    facet_wrap(~location, ncol = n_col) + 
-    gg_y_axis() + gg_x_axis() + gg_labels() + #gg_theme() + 
-    scale_y_continuous() + scale_x_datetime() +
-    theme(axis.title.x = element_blank()) -> p;print(p)
+    facet_wrap(~location, ncol = n_col) +
+    gg_y_axis() + gg_theme() + gg_labels() +
+    #scale_y_continuous() +
+    scale_x_datetime() +
+    theme(axis.title.x = element_blank())
+
+  print(p)
 }
 ```
-
