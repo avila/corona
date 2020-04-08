@@ -1,14 +1,20 @@
 ---
-title: "Covid_brazil"
+title: "Evoução dos casos e mortes por COVID-19 no Brasil"
 author: "Marcelo Avila"
 date: "4/6/2020"
-output: html_document
+output:
+  html_document:
+    toc: true
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, 
-                      fig.height = 14, 
-                      fig.width = 10)
+                      fig.height = 12,
+                      fig.width = 12,
+                      message = FALSE,
+                      warning = FALSE
+)
 
 # for dates in english 
 sys_time_local_old <- Sys.getlocale("LC_TIME")
@@ -19,10 +25,60 @@ options(scipen = 999)
 
 ```
 
-```{r libray}
+```{r download source file, echo=FALSE}
+library(lemon)
+knit_print.data.frame <- lemon::lemon_print
+filename <- "brazil_io.Rmd"
+xfun::embed_file(filename, filename, "Click here to Download source RMarkdown file")
+```
+
+
+## library
+
+```{r library}
 library(tidyverse)
 #library(lubridate)
 ```
+
+
+## read data from api or automatically
+
+```{r read data from api or automatically}
+l <- list()
+page_size <- 10000
+url <- paste0("https://brasil.io/api/dataset/covid19/caso/data?page_size=", page_size)
+pages <- 20
+for (i in 1:pages) {
+  br_io_json <- jsonlite::fromJSON(url)
+  l[[i]] <- br_io_json$results
+  cat(i, "\n")
+  cat(url, "\n")
+  url <- br_io_json$`next`
+  if(is.null(url)) break
+}
+
+df <- l %>% purrr::reduce(rbind) %>% unique()
+if (nrow(df)==(page_size * pages)) {
+  stop("Raise number of pages because the data probably got a bit bigger")
+}
+#rm(l)
+```
+
+## change types
+
+```{r change types}
+df_br <- df %>%  mutate(date = lubridate::date(date)) %>% 
+  arrange(state, city, date) %>% 
+  rename(Cum_Cases = confirmed, 
+         Cum_Deaths = deaths) %>% 
+  pivot_longer(cols = c(Cum_Cases, Cum_Deaths), 
+               names_to = "Category") %>% 
+  select(date, state, city, Category, value, everything())
+rm(df)
+DT::datatable(df_br)
+```
+
+## functions
 
 ```{r functions}
 human_numbers <- function(x = NULL, smbl ="", signif = 3){
@@ -103,41 +159,9 @@ cond_select <- conditionally(select)
 `%!in%` <- Negate(`%in%`)
 ```
 
+## define gen_df_to_plot
 
-
-```{r read data from api or automatically}
-l <- list()
-page_size <- 10000
-url <- paste0("https://brasil.io/api/dataset/covid19/caso/data?page_size=", page_size)
-pages <- 20
-for (i in 1:pages) {
-  br_io_json <- jsonlite::fromJSON(url)
-  l[[i]] <- br_io_json$results
-  cat(i, "\n")
-  cat(url, "\n")
-  url <- br_io_json$`next`
-  if(is.null(url)) break
-}
-
-df <- l %>% purrr::reduce(rbind) %>% unique()
-if (nrow(df)==(page_size * pages)) {
-  stop("Raise number of pages because the data probably got a bit bigger")
-}
-#rm(l)
-```
-
-```{r change types}
-df_br <- df %>%  mutate(date = lubridate::date(date)) %>% 
-  arrange(state, city, date) %>% 
-  rename(Cum_Cases = confirmed, 
-         Cum_Deaths = deaths) %>% 
-  pivot_longer(cols = c(Cum_Cases, Cum_Deaths), 
-               names_to = "Category") %>% 
-  select(date, state, city, Category, value, everything())
-rm(df)
-```
-
-```{r gen_df_to_plot}
+```{r define gen_df_to_plot}
 gen_df_to_plot <- function(data,
                            filter_state=NULL,
                            filter_city=NULL,
@@ -175,6 +199,10 @@ gen_df_to_plot <- function(data,
 #gen_df_to_plot(df_br, filter_city = "Rio de Janeiro")
 #gen_df_to_plot(df_br, filter_state =  c("SP", "RJ"))
 ```
+
+
+## genplot function
+
 ```{r genplot function}
 
 gen_plot <- function(data, filter_state=NULL,
@@ -245,6 +273,8 @@ gg_theme <- theme(legend.position = "none",
 
 ```
 
+
+## plots 
 
 ```{r fig.height=16, fig.width=10}
 top12_state <- df_br %>% 

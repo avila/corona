@@ -2,20 +2,50 @@
 title: "Covid Evolution by AGS"
 author: "Marcelo Avila"
 date: "4/8/2020"
-output: html_document
+output:
+  html_document:
+    toc: true
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, 
+                      fig.height = 12,
+                      fig.width = 12,
+                      message = FALSE,
+                      warning = FALSE
+)
 ```
 
-```{r, warning=FALSE, message=FALSE}
+```{r download source file echo=FALSE}
+filename <- "covid_german_states.Rmd"
+xfun::embed_file(filename, filename, "Click here to Download source RMarkdown file")
+```
+
+```{r download source file, echo=FALSE}
+filename <- "covid_german_ags.Rmd"
+xfun::embed_file(filename, filename, "Click here to Download source RMarkdown file")
+```
+
+
+## library
+
+```{r library, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+
+## ags codes
+
+```{r ags codes, warning=FALSE, message=FALSE}
 ags <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/ags.json"
 ags_json <- jsonlite::fromJSON(ags)
-(df_ags <- map_dfr(ags_json, as.data.frame, .id = "ags") %>% 
-  rename(ags_name=name))
+df_ags <- map_dfr(ags_json, as.data.frame, .id = "ags") %>% 
+  rename(ags_name=name)
 ```
 
+
+## readcsv
 
 ```{r readcsv, message=FALSE, warning=FALSE}
 rki_by_ags_cases <- "https://raw.githubusercontent.com/jgehrcke/covid-19-germany-gae/master/cases-rki-by-ags.csv"
@@ -45,9 +75,12 @@ df_ags_deaths <- read_csv(rki_by_ags_deaths) %>%
     mutate(name=case_when(
       name == "value" ~ "cumulative",
       name == "daily" ~ "daily")) %>% 
-    rename(type=name))
+    rename(type=name)) %>% DT::datatable()
 rm(rki_by_ags_cases, rki_by_ags_deaths)
 ```
+
+
+## helper functions
 
 ```{r helper functions}
 human_numbers <- function(x = NULL, smbl ="", signif = 3){
@@ -126,6 +159,9 @@ cond_select <- conditionally(select)
 
 ```
 
+
+## helper functions
+
 ```{r gg helper functions}
 singular <- function(txt)  substr(txt,1,nchar(txt)-1)
 
@@ -143,21 +179,24 @@ gg_y_axis <- function() {
 }
 gg_x_axis <- function() {
   scale_x_continuous(
-  name = paste0("Weeks past since ", null_day_threshold, nr_end, singular(variable)),
+  name = paste0("Weeks past since ", null_day_threshold, nr_end(), singular(variable)),
   breaks=seq(0, 1e3, 1), minor_breaks=1:1e3/7)
 }
 
 updated_at <- format(max(df_merged$time), "%b %d")
 
-gen_subtittle <- function() {
-  nr_end <- case_when(null_day_threshold %% 10 == 1 ~ "st ", 
-                      null_day_threshold %% 10 == 2 ~ "nd ",
-                      null_day_threshold %% 10 == 3 ~ "rd ", 
-                      TRUE ~ "th ")
+nr_end <- function() {
+  case_when(null_day_threshold %% 10 == 1 ~ "st ", 
+            null_day_threshold %% 10 == 2 ~ "nd ",
+            null_day_threshold %% 10 == 3 ~ "rd ", 
+            TRUE ~ "th ")
+}
+  gen_subtittle <- function() {
+  
   if (null_day_threshold==0) {
     sub <- paste0("Cumulative ", variable, " (log10 scaled, updated ", updated_at, ")")
   } else {
-    sub <- paste0("Cumulative ", variable, " since ", null_day_threshold, nr_end, singular(variable),
+    sub <- paste0("Cumulative ", variable, " since ", null_day_threshold, nr_end(), singular(variable),
                           " (log10 scaled, updated ", updated_at, ")")
   }
   return(sub)
@@ -171,7 +210,10 @@ gg_labels <- function() {
 }
 ```
 
-```{r gen_df_to_plot}
+
+## define gen_df_to_plot
+
+```{r define gen_df_to_plot}
 gen_df_to_plot <- function(data,
                            filter_variable=NULL,
                            filter_type=NULL,
@@ -192,29 +234,16 @@ df_to_plot <- gen_df_to_plot(df_merged, filter_variable = "cases", filter_type =
                              group_by_var = ags, null_day_threshold = 3)
 ```
 
-```{r fig.height=16, fig.width=10}
-states <- df_merged$state %>% unique()
-for (state_i in states[1:3]) {
-  p <- df_to_plot %>% rename(location=ags_name) %>% 
-    filter(state==state_i) %>% 
-    
-    ggplot(aes(x=date_shift, y=value, group=location)) +
-    geom_line(data=function(x) { select(x, date_shift, value, location_bkg) },
-              aes(x=date_shift, y=value, group=location_bkg), 
-              color="grey") +
-    geom_line(color = emph_color) + geom_point(color = emph_color, size=1/2) +
-    facet_wrap(~location, ncol = n_col) + 
-    gg_y_axis() + gg_x_axis() + gg_theme() + gg_labels()
-  print(p)
-}
-```
 
-```{r gen_df_to_plot cum , fig.width=10, fig.height=20, warning=FALSE}
+## plot cumulative
+
+```{r plot cumulative , fig.width=10, fig.height=20, warning=FALSE}
 n <- 16 * 2
+n_col <- 4
 ags_selection <- ungroup(df_merged) %>% filter(variable=="deaths") %>% 
   arrange(desc(value)) %>% select(ags_name, state, variable) %>% unique() %>% head(n) %>% pull(ags_name)
-df_merged <- df_merged %>% arrange(desc(value)) %>% 
-  mutate(ags_name=factor(ags_name, levels = unique(ags_name)))
+# df_merged <- df_merged %>% arrange(desc(value)) %>% 
+#   mutate(ags_name=factor(ags_name, levels = unique(ags_name)))
 
 for (variable in c("cases", "deaths")) {
   
@@ -246,7 +275,9 @@ for (variable in c("cases", "deaths")) {
 ```
 
 
-```{r gen_df_to_plot daily, fig.width=10, fig.height=20, warning=FALSE}
+## plot daily
+
+```{r plot daily, fig.width=10, fig.height=20, warning=FALSE}
 n <- 16 * 2
 
 
@@ -287,3 +318,4 @@ for (variable in c("cases", "deaths")) {
   print(p)
 }
 ```
+
