@@ -1,7 +1,7 @@
 ---
 title: "Covid Evolution by German States"
 author: "Marcelo Avila"
-date: "4/7/2020"
+date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
@@ -27,6 +27,7 @@ xfun::embed_file(filename, filename, "Click here to Download source RMarkdown fi
 
 ```{r libray, message=FALSE, warning=FALSE}
 library(tidyverse)
+library(tsibble)
 ```
 
 
@@ -84,9 +85,10 @@ df_state_deaths <- read_csv(rki_by_state_deaths) %>%
     mutate(name=case_when(
       name == "value" ~ "cumulative",
       name == "daily" ~ "daily")) %>% 
-    rename(type=name)) %>% DT::datatable()
+    rename(type=name))
 rm(df_state_cases, df_state_deaths)
 ```
+
 
 
 ## helper functions
@@ -305,5 +307,110 @@ for (variable in c("cases", "deaths")) {
     scale_y_continuous() + scale_x_datetime() +
     theme(axis.title.x = element_blank()) -> p;print(p)
 }
+```
+
+
+
+### log ratio
+
+
+
+```{r plot log ratio cases, fig.width=10, fig.height=12}
+var <- c("cases", "deaths")[1]
+color <- ifelse(var=="cases", "red", "black")
+sequ <- seq(0,300,by=10)
+df_merged %>% filter(variable == var, type == "cumulative") %>% 
+  mutate(value=slide_dbl(value, .size = 3, mean, na.rm = TRUE)) %>% 
+  mutate(value = if_else(value==0, NA_real_, value)) %>% 
+  mutate(cases_logratio = difference(log(value))) %>%
+  mutate(cases_logratio = if_else(cases_logratio==Inf, NA_real_, cases_logratio)) %>% 
+  filter(time >= as.POSIXct(Sys.Date() - 21)) %>%
+  ggplot(aes(x = time, y = cases_logratio, group = english)) +
+  geom_point() +
+  geom_smooth(method = "loess", color=color) +
+  facet_wrap(. ~ english, ncol = 4) +
+  xlab("Date") +
+  scale_y_continuous(
+    paste0("Daily increase in cumulative", var),
+    breaks = log(1+sequ/100),
+    labels = paste0(sequ,"%"),
+    minor_breaks=NULL, limits = c(-.01 ,NA)) +
+  labs(title="Evolution of COVID-19 in Germany",
+       subtitle=paste0("Daily increase in cumulative ", var,  " (3-Day Moving Average)"),
+       caption="\nCode: github.com/avila/corona. Data: RKI, gathered by github.com/jgehrcke/. Insight: https://robjhyndman.com/hyndsight/logratios-covid19/") +
+  ggthemes::scale_color_colorblind() + gg_theme()
+```
+
+```{r plot log ratio death,  fig.width=10, fig.height=12}
+var <- "cases"
+color <- ifelse(var=="cases", "red", "darkgrey")
+sequ <- seq(0,300,by=25)
+wdn <- 3
+
+df_merged %>% filter(variable == var, type == "cumulative") %>% 
+  mutate(value=slide_dbl(value, .size = wdn, mean, na.rm = TRUE)) %>% 
+  mutate(value = if_else(value==0, NA_real_, value)) %>% 
+  mutate(cases_logratio = difference(log(value))) %>%
+  
+  mutate(pct_delta = 100 * (exp(cases_logratio)-1)) %>% 
+  #mutate(pct_delta = if_else(pct_delta==Inf, NA_real_, pct_delta))
+  filter(time >= as.POSIXct(Sys.Date() - 21)) %>%
+  
+  ggplot(aes(x = time, y = cases_logratio, group = english)) +
+  geom_smooth(method = "loess", color=color) +
+  geom_point() +
+
+  facet_wrap(. ~ english, ncol = 4) +
+  xlab("Date") +
+  scale_y_continuous(
+    paste0("Daily increase in cumulative", var),
+    breaks = log(1+sequ/100),
+    labels = paste0(sequ,"%"),
+    minor_breaks=NULL,
+    #limits = c(-.1 ,1)
+    ) +
+  labs(title="Evolution of COVID-19 in Germany",
+       subtitle=paste0("Daily percentage increase in cumulative ", var, " (", wdn,  "-Day Moving Average)"),
+       caption="\nCode: github.com/avila/corona. Data: RKI, gathered by github.com/jgehrcke/. Insight: https://robjhyndman.com/hyndsight/logratios-covid19/") +
+  ggthemes::scale_color_colorblind() + gg_theme()
+
+```
+
+```{r}
+var <- c("cases", "deaths")[1]
+
+df_merged %>% filter(variable == var, type == "cumulative") %>% 
+  mutate(cases_logratio = difference(log(value))) %>%
+  mutate(cases_logratio = if_else(cases_logratio==Inf, NA_real_, cases_logratio)) %>% 
+  filter(time >= as.POSIXct(Sys.Date() - 5)) %>% 
+  mutate(x=100 * (exp(cases_logratio)-1)) %>% pull(x) %>% mean()
+```
+
+```{r}
+var <- c("deaths", "cases")[1]
+df_merged %>% filter(variable == var, type == "cumulative") %>% 
+  # mutate(value=slide_dbl(value, .size = 3, mean, na.rm = TRUE)) %>% 
+  # mutate(value = if_else(value==0, NA_real_, value)) %>% 
+  mutate(cases_logratio = difference(log(value))) %>%
+  #mutate(cases_logratio = if_else(cases_logratio==Inf, NA_real_, cases_logratio)) %>% 
+#filter(time == max(time)) %>% 
+  mutate(pct_delta = 100 * (exp(cases_logratio)-1)) %>% 
+  
+  filter(time >= max(time)-24*60*60*2)# %>% pull(pct_delta)
+#%>% mutate(x=100*cases_logratio) %>% pull(x) %>% summary()
+```
+
+```{r}
+df_merged %>% ungroup() %>% filter(variable == "cases") %>% summarise(mean=mean(value,na.rm = T),
+                                                        sum=sum(value, na.rm = T)) / 1e6
+```
+
+
+```{r}
+hmean <- function(x, na.rm=T) { 1 / mean(1/x, na.rm = na.rm) }
+hmean(c(3, 2, 3, 4))
+
+1*1.5*1.5
+
 ```
 

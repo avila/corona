@@ -1,7 +1,7 @@
 ---
 title: "Evoução dos casos e mortes por COVID-19 no Brasil"
 author: "Marcelo Avila"
-date: "4/6/2020"
+date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE,
 
 # for dates in english 
 sys_time_local_old <- Sys.getlocale("LC_TIME")
-#Sys.setlocale("LC_TIME", "pt_BR.UTF-8")
+Sys.setlocale("LC_TIME", "pt_BR.utf8")
 
 # avoid scientific notation
 options(scipen = 999)
@@ -42,6 +42,39 @@ library(tidyverse)
 
 
 ## read data from api or automatically
+
+```{r}
+cod_br <- read_csv('estado, state
+Acre, AC
+Alagoas, AL
+Amapá, AP
+Amazonas, AM
+Bahia, BA
+Ceará, CE
+Espírito Santo, ES
+Goiás, GO
+Maranhão, MA
+Mato Grosso, MT
+Mato Grosso do Sul, MS
+Minas Gerais, MG
+Pará, PA
+Paraíba, PB
+Paraná, PR
+Pernambuco, PE
+Piauí, PI
+Rio de Janeiro, RJ
+Rio Grande do Norte, RN
+Rio Grande do Sul, RS
+Rondônia, RO
+Roraima, RR
+Santa Catarina, SC
+São Paulo, SP
+Sergipe, SE
+Tocantins, TO
+Distrito Federal, DF')
+
+```
+
 
 ```{r read data from api or automatically}
 l <- list()
@@ -73,9 +106,10 @@ df_br <- df %>%  mutate(date = lubridate::date(date)) %>%
          Cum_Deaths = deaths) %>% 
   pivot_longer(cols = c(Cum_Cases, Cum_Deaths), 
                names_to = "Category") %>% 
-  select(date, state, city, Category, value, everything())
+  select(date, state, city, Category, value, everything()) %>% 
+  left_join(cod_br)
 rm(df)
-DT::datatable(df_br)
+
 ```
 
 ## functions
@@ -330,5 +364,69 @@ gen_plot(df_br,
          null_day_threshold = 3
          ) + gg_theme 
 
+```
+
+### log ratio
+
+```{r log ratio, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+atualzado_em <- df_br %>% pull(date) %>% max() %>% format("%d de %B")
+wdn <- 3
+state_l <- df_br$state %>% unique()
+state_l[]
+x_days <- 14
+df_br %>% filter(state %in% state_l[1:6]) %>% 
+  group_by(state) %>% 
+  filter(Category == "Cum_Cases", place_type == "state") %>% 
+  mutate(value=slide_dbl(value, .size = wdn, mean, na.rm = TRUE)) %>% 
+  #mutate(value = if_else(value==0, NA_real_, value)) %>% 
+  mutate(cases_logratio = difference(log(value))) %>%
+  
+  mutate(pct_delta = 100 * (exp(cases_logratio)-1)) %>% 
+  #mutate(pct_delta = if_else(pct_delta==Inf, NA_real_, pct_delta))
+  filter(date >= as.POSIXct(Sys.Date() - x_days)) %>%
+  
+  ggplot(aes(x = date, y = cases_logratio, group = estado)) +
+  geom_smooth(method = "loess", color=color, se = T) +
+  geom_point() +
+
+  facet_wrap(. ~ estado, ncol = 3) +
+  xlab("") +
+  scale_y_continuous(
+    paste0("Crescimento percentual diário"),
+    breaks = log(1 + seq(0,300,by=15)/100),
+    labels = paste0(seq(0,300,by=15) ,"%"),
+    minor_breaks=seq(0,300,by=25),
+    #limits = c(-.1 , 1)
+    ) +
+  scale_x_date(date_breaks = "1 week", date_minor_breaks = "days",
+               date_labels = "%d/%m") + 
+  labs(title=paste0("Evolução do COVID-19 no Brasil nos útimos ", x_days, " dias"),
+       subtitle=paste0("Crescimento percentual diário de casos confirmados (Atualizado em ", atualzado_em, "*, média móvel de ", wdn,  " dias)"),
+       #subtitle=paste0("Crescimento percentual diário em casos confirmados (Atualizado em ", atualzado_em, ")"), 
+       caption="Código: github.com/avila/corona/
+       Dados: https://brasil.io/dataset/covid19/caso\n
+       Grupo Análise COVID-19\n  www.analisecovid19.org \n Twitter @analise_covid19 \n Instagram & Facebook @analise.covid19") +
+  ggthemes::scale_color_colorblind() + 
+  theme(plot.title = element_text(size=20, face='bold'), 
+        title = element_text(size=11))
+
+ggsave(paste0("/tmp/covid_logratio_br_", format(Sys.Date(), "%Y_%m_%d"), ".png"), dpi = 300)
+
+```
+
+```{r}
+xx %>% filter(state=="RR") %>% pull(value) %>% plot()
+```
+
+```{r}
+df_br %>% filter(state=="RR", place_type=="state", Category == "Cum_Cases") 
+```
+
+```{r}
+
+```
+
+```{r}
+df_br %>% filter(Category=="Cum_Cases", state=="AP", place_type=="state") 
 ```
 

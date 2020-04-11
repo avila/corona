@@ -1,7 +1,7 @@
 ---
 title: "Covid Evolution by AGS"
 author: "Marcelo Avila"
-date: "4/8/2020"
+date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
@@ -17,10 +17,6 @@ knitr::opts_chunk$set(echo = TRUE,
 )
 ```
 
-```{r download source file echo=FALSE}
-filename <- "covid_german_states.Rmd"
-xfun::embed_file(filename, filename, "Click here to Download source RMarkdown file")
-```
 
 ```{r download source file, echo=FALSE}
 filename <- "covid_german_ags.Rmd"
@@ -68,14 +64,14 @@ df_ags_deaths <- read_csv(rki_by_ags_deaths) %>%
          variable="deaths") %>% 
   pivot_longer(c(value, daily))
 
-(df_merged <- rbind(df_ags_cases, df_ags_deaths) %>%
+df_merged <- rbind(df_ags_cases, df_ags_deaths) %>%
     arrange(ags, time_iso8601) %>% 
     left_join(df_ags) %>% 
     rename(time=time_iso8601) %>%
     mutate(name=case_when(
       name == "value" ~ "cumulative",
       name == "daily" ~ "daily")) %>% 
-    rename(type=name)) %>% DT::datatable()
+    rename(type=name)
 rm(rki_by_ags_cases, rki_by_ags_deaths)
 ```
 
