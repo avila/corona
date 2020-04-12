@@ -109,7 +109,6 @@ df_br <- df %>%  mutate(date = lubridate::date(date)) %>%
   select(date, state, city, Category, value, everything()) %>% 
   left_join(cod_br)
 rm(df)
-
 ```
 
 ## functions
@@ -368,13 +367,12 @@ gen_plot(df_br,
 
 ### log ratio
 
-```{r log ratio, fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+```{r log ratio, fig.height=16, fig.width=10, message=FALSE, warning=FALSE}
 atualzado_em <- df_br %>% pull(date) %>% max() %>% format("%d de %B")
 wdn <- 3
 state_l <- df_br$state %>% unique()
-state_l[]
 x_days <- 14
-df_br %>% filter(state %in% state_l[1:6]) %>% 
+df_br %>% #filter(state %in% state_l[1:6]) %>% 
   group_by(state) %>% 
   filter(Category == "Cum_Cases", place_type == "state") %>% 
   mutate(value=slide_dbl(value, .size = wdn, mean, na.rm = TRUE)) %>% 
@@ -389,26 +387,26 @@ df_br %>% filter(state %in% state_l[1:6]) %>%
   geom_smooth(method = "loess", color=color, se = T) +
   geom_point() +
 
-  facet_wrap(. ~ estado, ncol = 3) +
+  facet_wrap(. ~ estado, ncol = 5) +
   xlab("") +
   scale_y_continuous(
     paste0("Crescimento percentual diário"),
     breaks = log(1 + seq(0,300,by=15)/100),
     labels = paste0(seq(0,300,by=15) ,"%"),
     minor_breaks=seq(0,300,by=25),
-    #limits = c(-.1 , 1)
+    limits = c(-.05 , .5)
     ) +
   scale_x_date(date_breaks = "1 week", date_minor_breaks = "days",
                date_labels = "%d/%m") + 
-  labs(title=paste0("Evolução do COVID-19 no Brasil nos útimos ", x_days, " dias"),
-       subtitle=paste0("Crescimento percentual diário de casos confirmados (Atualizado em ", atualzado_em, "*, média móvel de ", wdn,  " dias)"),
+  labs(title=paste0("RASCUNHO!! Evolução do COVID-19 no Brasil nos útimos ", x_days, " dias"),
+       subtitle=paste0("Crescimento percentual diário de casos confirmados (Atualizado em ", atualzado_em, ", média móvel de ", wdn,  " dias)"),
        #subtitle=paste0("Crescimento percentual diário em casos confirmados (Atualizado em ", atualzado_em, ")"), 
        caption="Código: github.com/avila/corona/
        Dados: https://brasil.io/dataset/covid19/caso\n
        Grupo Análise COVID-19\n  www.analisecovid19.org \n Twitter @analise_covid19 \n Instagram & Facebook @analise.covid19") +
   ggthemes::scale_color_colorblind() + 
-  theme(plot.title = element_text(size=20, face='bold'), 
-        title = element_text(size=11))
+  theme(plot.title = element_text(size=22, face='bold'), 
+        title = element_text(size=12))
 
 ggsave(paste0("/tmp/covid_logratio_br_", format(Sys.Date(), "%Y_%m_%d"), ".png"), dpi = 300)
 
@@ -428,5 +426,45 @@ df_br %>% filter(state=="RR", place_type=="state", Category == "Cum_Cases")
 
 ```{r}
 df_br %>% filter(Category=="Cum_Cases", state=="AP", place_type=="state") 
+```
+
+
+```{r fig.height=4, fig.width=8}
+df_br %>% filter(
+  Category=="Cum_Cases", state %in% c("RJ", "PR"), place_type=="state"
+) %>% ggplot(aes(y=value, x=date, group=state)) + 
+  geom_line() + facet_wrap(~state) + 
+  ggtitle("Rascunho: Casos de Covid-19")
+```
+
+```{r fig.width=8, fig.height=6}
+r1 <- 1.2
+r2 <- 1.5
+y1 <- c(1, rep(NA, 19))
+y2 <- y1
+y3 <- y1
+x <- 1:20
+for (i in 2:20) { 
+  y1[i] <- y1[i-1] * r1
+  y2[i] <- y2[i-1] * (ifelse(i<11, r1, r2))
+  y3[i] <- y3[i-1] + .5
+}
+
+
+
+par(mfrow=c(1,2))
+plot(x,y1, type="l", lwd=3)
+lines(x,y2, type="l", lwd=2, col="red")
+lines(x,y3, type="l", col="blue")
+abline(v=10, col="grey", lty=3)
+grid()
+
+plot(x,y1, type="l", lwd=4, log="y")
+lines(x,y2, type="l", lwd=2, col="red")
+lines(x,y3, type="l", col="blue")
+abline(v=10, col="grey", lty=3)
+grid()
+legend(1, 30, legend=c("Com quebra", "Linear", "Sem Quebra"),
+       col=c("red", "blue", "black"), lty=1, lwd=c(1,1,3), cex=0.8)
 ```
 

@@ -316,7 +316,7 @@ for (variable in c("cases", "deaths")) {
 
 
 ```{r plot log ratio cases, fig.width=10, fig.height=12}
-var <- c("cases", "deaths")[1]
+var <- c("cases", "deaths")[2]
 color <- ifelse(var=="cases", "red", "black")
 sequ <- seq(0,300,by=10)
 df_merged %>% filter(variable == var, type == "cumulative") %>% 
@@ -324,7 +324,7 @@ df_merged %>% filter(variable == var, type == "cumulative") %>%
   mutate(value = if_else(value==0, NA_real_, value)) %>% 
   mutate(cases_logratio = difference(log(value))) %>%
   mutate(cases_logratio = if_else(cases_logratio==Inf, NA_real_, cases_logratio)) %>% 
-  filter(time >= as.POSIXct(Sys.Date() - 21)) %>%
+  filter(time >= as.POSIXct(Sys.Date() - 14)) %>%
   ggplot(aes(x = time, y = cases_logratio, group = english)) +
   geom_point() +
   geom_smooth(method = "loess", color=color) +
