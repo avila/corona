@@ -209,7 +209,48 @@ gg_theme <- theme(legend.position = "none",
         plot.title = element_text(size=rel(3)),
         plot.subtitle = element_text(size=rel(2)))
 
+human_numbers <- function(x = NULL, smbl ="", signif = 3){
+  humanity <- function(y){
+
+    if (!is.na(y)){
+      tn <- round(abs(y) / 1e12, signif)
+      b <- round(abs(y) / 1e9, signif)
+      m <- round(abs(y) / 1e6, signif)
+      k <- round(abs(y) / 1e3, signif)
+      
+      if ( y >= 0 ){
+        y_is_positive <- ""
+      } else {
+        y_is_positive <- "-"
+      }
+      
+      if ( k < 1 ) {
+        paste0( y_is_positive, smbl, round(abs(y), signif ))
+      } else if ( m < 1){
+        paste0 (y_is_positive, smbl,  k , "k")
+      } else if (b < 1){
+        paste0 (y_is_positive, smbl, m ,"m")
+      }else if(tn < 1){
+        paste0 (y_is_positive, smbl, b ,"bn")
+      } else {
+        paste0 (y_is_positive, smbl,  comma(tn), "tn")
+      }
+    } else if (is.na(y) | is.null(y)){
+      "-"
+    }
+  }
+  
+  sapply(x,humanity)
+}
+
+#' Human versions of large currency numbers - extensible via smbl
+
+human_gbp   <- function(x){human_numbers(x, smbl = "£")}
+human_usd   <- function(x){human_numbers(x, smbl = "$")}
+human_euro  <- function(x){human_numbers(x, smbl = "€")} 
+human_num   <- function(x){human_numbers(x, smbl = "")} 
 ```
+
 
 ```{r}
 top12 <- df %>% filter(Category == "Cum_Deaths") %>% 
@@ -225,8 +266,8 @@ filter_countries <- c("Brazil", "Germany", "Italy", "South Korea",
                       "Spain", "France", "Iran", "Japan", "Singapore",
                       "India", "United states of america", "United kingdom", 
                       "Russia", "Chile", "Colombia", "Portugal", "Ecuador", "South Africa" ,
-                      "Belarus", "Sweden", "Netherlands", "Belgium", "Germany", "Switzerland", 
-                      "Turkey" )[1]
+                      "Belarus", "Sweden", "Netherlands", "Belgium", "Germany", "Switzerland",
+                      "Turkey" )
 categs <- c("Cum_Deaths", "Cum_Cases")[1:2]
 for (cat in categs) {
   threshold <- ifelse(cat=="Cum_Cases", 100, 5 )
@@ -285,46 +326,4 @@ for (cat in c("Cum_Cases", "Cum_Deaths")) {
 
 
 
-```{r}
-human_numbers <- function(x = NULL, smbl ="", signif = 3){
-  humanity <- function(y){
-
-    if (!is.na(y)){
-      tn <- round(abs(y) / 1e12, signif)
-      b <- round(abs(y) / 1e9, signif)
-      m <- round(abs(y) / 1e6, signif)
-      k <- round(abs(y) / 1e3, signif)
-      
-      if ( y >= 0 ){
-        y_is_positive <- ""
-      } else {
-        y_is_positive <- "-"
-      }
-      
-      if ( k < 1 ) {
-        paste0( y_is_positive, smbl, round(abs(y), signif ))
-      } else if ( m < 1){
-        paste0 (y_is_positive, smbl,  k , "k")
-      } else if (b < 1){
-        paste0 (y_is_positive, smbl, m ,"m")
-      }else if(tn < 1){
-        paste0 (y_is_positive, smbl, b ,"bn")
-      } else {
-        paste0 (y_is_positive, smbl,  comma(tn), "tn")
-      }
-    } else if (is.na(y) | is.null(y)){
-      "-"
-    }
-  }
-  
-  sapply(x,humanity)
-}
-
-#' Human versions of large currency numbers - extensible via smbl
-
-human_gbp   <- function(x){human_numbers(x, smbl = "£")}
-human_usd   <- function(x){human_numbers(x, smbl = "$")}
-human_euro  <- function(x){human_numbers(x, smbl = "€")} 
-human_num   <- function(x){human_numbers(x, smbl = "")} 
-```
 
