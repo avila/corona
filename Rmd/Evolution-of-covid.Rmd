@@ -34,42 +34,6 @@ library(httr)
 library(lubridate)
 ```
 
-# define helper functions
-
-```{r define helper functions}
-fun_dot <- function(x) format(x, big.mark = " ",
-                              scientific = FALSE,
-                              decimal.mark = ".")
-
-# negative in
-`%!in%` <- Negate(`%in%`)
-
-# y scale
-log10_minor_break = function (...){
-  function(x) {
-    minx         = floor(min(log10(x), na.rm=T))-1;
-    maxx         = ceiling(max(log10(x), na.rm=T))+1;
-    n_major      = maxx-minx+1;
-    major_breaks = seq(minx, maxx, by=1)
-    minor_breaks = 
-      rep(log10(seq(1, 9, by=1)), times = n_major)+
-      rep(major_breaks, each = 9)
-    return(10^(minor_breaks))
-  }
-}
-
-# for conditionaly filtering
-# (from: https://github.com/tidyverse/magrittr/issues/109#issuecomment-371999796)
-conditionally <- function(fun){
-    function(first_arg, ..., execute){
-        if(execute) return(fun(first_arg, ...))
-        else return(first_arg)
-    }
-}
-cond_filter <- conditionally(filter)
-cond_select <- conditionally(select)
-```
-
 # load data 
 
 ```{r load data, message=FALSE, warning=FALSE, include=FALSE}
@@ -119,6 +83,44 @@ df <- df %>% mutate(
   Continent=if_else(Continent == "Oceania", "Asia", Continent),
   Continent=if_else(is.na(Continent), "Other", Continent))
 ```
+
+# define helper functions
+
+```{r define helper functions}
+fun_dot <- function(x) format(x, big.mark = " ",
+                              scientific = FALSE,
+                              decimal.mark = ".")
+
+# negative in
+`%!in%` <- Negate(`%in%`)
+
+# y scale
+log10_minor_break = function (...){
+  function(x) {
+    minx         = floor(min(log10(x), na.rm=T))-1;
+    maxx         = ceiling(max(log10(x), na.rm=T))+1;
+    n_major      = maxx-minx+1;
+    major_breaks = seq(minx, maxx, by=1)
+    minor_breaks = 
+      rep(log10(seq(1, 9, by=1)), times = n_major)+
+      rep(major_breaks, each = 9)
+    return(10^(minor_breaks))
+  }
+}
+
+# for conditionaly filtering
+# (from: https://github.com/tidyverse/magrittr/issues/109#issuecomment-371999796)
+conditionally <- function(fun){
+    function(first_arg, ..., execute){
+        if(execute) return(fun(first_arg, ...))
+        else return(first_arg)
+    }
+}
+cond_filter <- conditionally(filter)
+cond_select <- conditionally(select)
+```
+
+
 # define plot function 
 
 ```{r gen plot function, fig.width=16, fig.height=12}

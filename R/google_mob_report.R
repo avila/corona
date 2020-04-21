@@ -22,7 +22,7 @@ df %>% filter(country=="BR") %>%
   #geom_smooth(method = "loess", se = T) +
   scale_x_date(date_breaks = "2 week", date_minor_breaks = "day", date_labels = "%b %d") +
   facet_wrap(~categ_pt) +
-  gghighlight::gghighlight()
+  #gghighlight::gghighlight()
   ggtitle("Relatório de Mobilidade Google COVID-19: Estados Brasileiros", 
           paste0("Variação percentual, comparado ao baseline entre 3 jan - 6 fev")) +
   labs(caption = paste0("Código: github.com/avila\n",
