@@ -1,0 +1,138 @@
+---
+title: "obitos"
+author: "Marcelo Avila"
+date: "4/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      fig.height = 8,
+                      fig.width = 10)
+```
+
+
+## library 
+
+```{r}
+library(tidyverse)
+#library(tsibble)
+library(slider)
+```
+
+```{r read data from api or automatically}
+l <- list()
+page_size <- 10000
+url <- paste0("https://brasil.io/api/dataset/covid19/caso/data?page_size=", page_size)
+pages <- 20
+for (i in 1:pages) {
+  br_io_json <- jsonlite::fromJSON(url)
+  l[[i]] <- br_io_json$results
+  cat(i, "\n")
+  cat(url, "\n")
+  url <- br_io_json$`next`
+  if(is.null(url)) break
+}
+
+df <- l %>% purrr::reduce(rbind) %>% unique()
+if (nrow(df)==(page_size * pages)) {
+  stop("Raise number of pages because the data probably got a bit bigger")
+}
+#rm(l)
+```
+
+
+```{r}
+url <- "https://data.brasil.io/dataset/covid19/obito_cartorio.csv.gz"
+
+df_r <- read_csv(url) %>% #select(!starts_with("new")) %>% 
+  pivot_longer(-c(state,date), names_to = "variable")
+```
+
+```{r}
+cod_br <- read_csv('estado, state
+Acre, AC
+Alagoas, AL
+Amapá, AP
+Amazonas, AM
+Bahia, BA
+Ceará, CE
+Espírito Santo, ES
+Goiás, GO
+Maranhão, MA
+Mato Grosso, MT
+Mato Grosso do Sul, MS
+Minas Gerais, MG
+Pará, PA
+Paraíba, PB
+Paraná, PR
+Pernambuco, PE
+Piauí, PI
+Rio de Janeiro, RJ
+Rio Grande do Norte, RN
+Rio Grande do Sul, RS
+Rondônia, RO
+Roraima, RR
+Santa Catarina, SC
+São Paulo, SP
+Sergipe, SE
+Tocantins, TO
+Distrito Federal, DF')
+```
+
+## change types
+
+```{r change types}
+df_br <- df %>%  mutate(date = lubridate::date(date)) %>% 
+  filter(place_type == "state") %>% 
+  arrange(state, city, date) %>% 
+  rename(Cum_Cases = confirmed, 
+         Cum_Deaths = deaths) %>% 
+  pivot_longer(cols = c(Cum_Cases, Cum_Deaths), 
+               names_to = "Category") %>% 
+  select(date, state, city, Category, value, everything()) %>% 
+  left_join(cod_br, by = "state") %>% 
+  left_join(df_r, by = c("date", "state", "value")) %>% 
+  select(!c("city", "city_ibge_code", "confirmed_per_100k_inhabitants", "is_last", 
+            ))
+  
+#rm(df)
+```
+
+```{r}
+df_r 
+```
+
+```{r fig.height=8, fig.width=12}
+df_r %>% #select(!starts_with("new")) %>% 
+  filter(date>"2020-03-10") %>%
+  group_by(state, variable) %>% 
+  mutate(slider::slide_dbl(value, mean, .before = 2 )) %>% 
+  #filter(variable=="new_deaths_pneumonia_2020", state=="AC")
+  #filter(variable %in% c("deaths_covid19", "deaths_respiratory_failure_2020")) %>% 
+  filter(!grepl(variable, pattern = "epi|2019|^dea")) %>% 
+  group_by(state) %>% 
+  ggplot(aes(y = value, x=date, color=variable)) + geom_line() + scale_y_log10() + facet_wrap(~state) +
+  scale_x_date(date_breaks = "week", date_minor_breaks = "day", date_labels = "%d") +
+  theme_void()
+```
+
+```{r, fig.width=10, fig.height=6}
+p1 <- df_br %>% group_by( date) %>% 
+  filter(date>"2020-03-01", name=="deaths_covid19") %>% 
+  summarise(sum=sum(value)) %>% 
+  ggplot(aes(x=date, y = sum)) + geom_line() +
+  scale_x_date(date_breaks = "week", date_minor_breaks = "day",date_labels = "%m/%d")
+
+p1 <- df_br %>% group_by(date) %>% 
+  filter(date>"2020-03-01") %>% 
+  summarise(sum=sum(deaths_covid19)) %>% 
+  ggplot(aes(x=date, y = sum)) + geom_line() +
+  scale_x_date(date_breaks = "week", date_minor_breaks = "day",date_labels = "%m/%d")
+
+
+p2 <- p1 + scale_y_log10()
+
+cowplot::plot_grid(p1, p2)
+```
+
