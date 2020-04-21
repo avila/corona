@@ -1,0 +1,605 @@
+---
+title: "Evoução dos casos e mortes por COVID-19 no Brasil"
+author: "Marcelo Avila"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      fig.height = 12,
+                      fig.width = 12,
+                      message = FALSE,
+                      warning = FALSE
+)
+
+# for dates in english 
+sys_time_local_old <- Sys.getlocale("LC_TIME")
+Sys.setlocale("LC_TIME", "pt_BR.utf8")
+
+# avoid scientific notation
+options(scipen = 999)
+
+```
+
+```{r download source file, echo=FALSE}
+library(lemon)
+knit_print.data.frame <- lemon::lemon_print
+filename <- "brazil_io.Rmd"
+xfun::embed_file(filename, filename, "Click here to Download source RMarkdown file")
+```
+
+
+## library
+
+```{r library}
+library(tidyverse)
+#library(lubridate)
+```
+
+
+## read data from api or automatically
+
+```{r}
+cod_br <- read_csv('estado, state
+Acre, AC
+Alagoas, AL
+Amapá, AP
+Amazonas, AM
+Bahia, BA
+Ceará, CE
+Espírito Santo, ES
+Goiás, GO
+Maranhão, MA
+Mato Grosso, MT
+Mato Grosso do Sul, MS
+Minas Gerais, MG
+Pará, PA
+Paraíba, PB
+Paraná, PR
+Pernambuco, PE
+Piauí, PI
+Rio de Janeiro, RJ
+Rio Grande do Norte, RN
+Rio Grande do Sul, RS
+Rondônia, RO
+Roraima, RR
+Santa Catarina, SC
+São Paulo, SP
+Sergipe, SE
+Tocantins, TO
+Distrito Federal, DF')
+
+estado_capital <- read_csv(
+'"regiao","estado","sigla","capital"
+"Norte","Amazonas","AM","Manaus"
+"Norte","Roraima","RR","Boa Vista"
+"Norte","Amapá","AP","Macapá"
+"Norte","Pará","PA","Belém"
+"Norte","Tocantins","TO","Palmas"
+"Norte","Rondônia","RO","Porto Velho"
+"Norte","Acre","AC","Rio Branco"
+"Nordeste","Maranhão","MA","São Luís"
+"Nordeste","Piauí","PI","Teresina"
+"Nordeste","Ceará","CE","Fortaleza"
+"Nordeste","Rio Grande do Norte","RN","Natal"
+"Nordeste","Pernambuco","PE","Recife"
+"Nordeste","Paraíba","PB","João Pessoa"
+"Nordeste","Sergipe","SE","Aracaju"
+"Nordeste","Alagoas","AL","Maceió"
+"Nordeste","Bahia","BA","Salvador"
+"Centro-Oeste","Mato Grosso","MT","Cuiabá"
+"Centro-Oeste","Mato Grosso do Sul","MS","Campo Grande"
+"Centro-Oeste","Goiás","GO","Goiânia"
+"Centro-Oeste","Distrito Federal","DF","Brasília"
+"Sudeste","São Paulo","SP","São Paulo"
+"Sudeste","Rio de Janeiro","RJ","Rio de Janeiro"
+"Sudeste","Espírito Santo","ES","Vitória"
+"Sudeste","Minas Gerais","MG","Belo Horizonte"
+"Sul","Paraná","PR","Curitiba"
+"Sul","Rio Grande do Sul","RS","Porto Alegre"
+"Sul","Santa Catarina","SC","Florianópolis"')
+
+```
+
+
+```{r read data from api or automatically}
+l <- list()
+page_size <- 10000
+url <- paste0("https://brasil.io/api/dataset/covid19/caso/data?page_size=", page_size)
+pages <- 20
+for (i in 1:pages) {
+  br_io_json <- jsonlite::fromJSON(url)
+  l[[i]] <- br_io_json$results
+  cat(i, "\n")
+  cat(url, "\n")
+  url <- br_io_json$`next`
+  if(is.null(url)) break
+}
+
+df <- l %>% purrr::reduce(rbind) %>% unique()
+if (nrow(df)==(page_size * pages)) {
+  stop("Raise number of pages because the data probably got a bit bigger")
+}
+```
+
+## change types
+
+```{r change types}
+df_br <- df %>%  mutate(date = lubridate::date(date)) %>% 
+  arrange(state, city, date) %>% 
+  rename(Cum_Cases = confirmed, 
+         Cum_Deaths = deaths) %>% 
+  group_by(state, city) %>% 
+  mutate(Daily_Cases = Cum_Cases - lag(Cum_Cases, default = 0), 
+         Daily_Deaths = Cum_Deaths - lag(Cum_Deaths, default = 0)) %>% 
+    pivot_longer(cols = c(Cum_Cases, Cum_Deaths, Daily_Cases), 
+               names_to = "Category") %>% 
+  select(date, state, city, Category, value, everything()) %>% 
+  left_join(estado_capital, by = c("state" = "sigla")) %>% 
+  ungroup()
+  #filter(city!="Importados/Indefinidos")
+```
+
+```{r}
+rm(l, df)
+gc()
+```
+
+## functions
+
+```{r functions}
+
+fun_dot <- function(x) format(x, big.mark = " ",
+                              scientific = FALSE,
+                              decimal.mark = ".")
+
+```
+
+## define gen_df_to_plot
+
+```{r define gen_df_to_plot}
+gen_df_to_plot <- function(data,
+                           filter_state=NULL,
+                           filter_city=NULL,
+                           null_day_threshold=1,
+                           filter_category="Cum_Cases") {
+  if (!is.null(filter_city)) {
+    data <- data %>% 
+      filter(toupper(city) %in% toupper(filter_city) | isTRUE(filter_city),
+             place_type == "city") %>% 
+      group_by(city) %>% 
+      filter(Category == filter_category) %>% 
+      filter(value >= null_day_threshold) %>% 
+      mutate(date_shift=0:(n()-1)/7) %>% # generate date shifted after null_day_threshold
+      ungroup(city) %>% 
+      arrange(city, date_shift) %>% 
+      mutate(Location_bkg = city) %>% 
+      rename(Location=city)
+  } else { 
+    data <- data %>% 
+      filter(toupper(state) %in% toupper(filter_state) | isTRUE(filter_state), 
+             place_type == "state") %>% 
+      group_by(state) %>% 
+      filter(Category == filter_category) %>% 
+      filter(value >= null_day_threshold) %>% 
+      mutate(date_shift=0:(n()-1)/7) %>% # generate date shifted after null_day_threshold
+      ungroup(state) %>% 
+      arrange(state, date_shift) %>% 
+      mutate(Location_bkg = state) %>% 
+      rename(Location=estado)
+  }
+  
+  return(data)
+}
+#debugonce(gen_df_to_plot)
+#gen_df_to_plot(df_br, filter_city = "Rio de Janeiro")
+#gen_df_to_plot(df_br, filter_state =  c("SP", "RJ"))
+```
+
+
+## genplot function
+
+```{r genplot function}
+
+gen_plot <- function(data, filter_state=NULL,
+                     filter_city=NULL,
+                     filter_category="Cum_Cases",
+                     null_day_threshold=NULL,
+                     emph_color=NULL,
+                     proportional=FALSE,
+                     n_col=NULL, 
+                     wrap_on_var = NULL) {
+  
+  
+  if(is.null(null_day_threshold)) null_day_threshold <- ifelse(filter_category == "Cum_Deaths", 5, 50)
+  df_to_plot <- gen_df_to_plot(data,
+                               filter_state=filter_state,
+                               filter_city=filter_city,
+                               null_day_threshold=null_day_threshold,
+                               filter_category=filter_category)
+  
+  
+  
+  nr_end <- "º"
+  #artigo <- ifelse(filter_category == "Cum_Deaths", "a", "o")
+  # plot descriptions
+  updated_at <- data$date %>% max() %>% format("%d de %B")
+
+  gg_category <- ifelse(grepl("Death", filter_category), "óbito", "caso")
+  if (is.null(emph_color)) emph_color <- ifelse(grepl("Death", filter_category), "black", "red")
+    
+  
+  
+  gg_x_name <- paste0("Semanas desde o ", null_day_threshold, nr_end, " ",  gg_category)
+  gg_caption <- 
+  "⚠ Devido a subnotificação dos números oficiais, a lacuna entre números reais e confirmados
+  pode ser consideravelmente grande e de diferentes proporções em cada região.
+  
+  Código: github.com/avila/corona/Rmd/brazil_io_cumulative.Rmd | Dados: https://brasil.io/dataset/covid19/caso"
+  
+  
+  if (proportional) {
+    df_to_plot <- df_to_plot %>% mutate(value = value / estimated_population_2019 * 1e5)
+    #threshold <- threshold / 1e5
+    y_breaks = 10^(0:9)/10000
+    gg_title <- paste0("Evolução do COVID-19: ", gg_category, "s confirmados") %>% tools::toTitleCase()
+    gg_subtitle <- paste0("Dados cumulativos desde o ", null_day_threshold, nr_end, " ", gg_category,
+                          " (escala em log, por 100k habitantes,  atualizado ", updated_at, ")")
+    
+  } else {
+    y_breaks = 10^(0:9)
+    gg_title <- paste0("Evolução do COVID-19: ", gg_category, "s confirmados") %>% tools::toTitleCase()
+    
+    gg_subtitle <- paste0("Dados cumulativos desde o ", null_day_threshold, nr_end, " ", gg_category,
+                          " (escala em log, atualizado ", updated_at, ")")
+  }
+  
+  if (!isTRUE(wrap_on_var)) { 
+    df_to_plot <- df_to_plot %>%  group_by(Location) %>% 
+    mutate(label = if_else(date_shift == max(date_shift), as.character(
+      paste0(Location,": ", value)), NA_character_)) 
+  }
+  
+  # df_to_plot <- df_to_plot %>%  group_by(Location) %>% 
+  #   mutate(last_val = if_else(date_shift == max(date_shift), value, NA_integer_))
+  
+  
+  # plot
+  p <- df_to_plot %>% group_by(Location) %>% 
+    ggplot(aes(x=date_shift, y=value, group=Location)) + 
+    # geom_point(aes(x=date_shift,
+    #                y=last_val
+    #                ),
+    #            #col=emph_color, 
+    #            size=2) +
+    
+    #title
+    labs(title=gg_title, subtitle=gg_subtitle, caption=gg_caption) +
+    scale_x_continuous(name=gg_x_name, breaks=seq(0, 1e3, 1), minor_breaks=1:1e3/7)
+  if (grepl(x=filter_category, pattern = "Cum")) {
+   p <- p + scale_y_log10(labels=human_num,
+                  #breaks = y_breaks,
+                  minor_breaks=log10_minor_break()) 
+  }
+   
+  
+  if (isTRUE(wrap_on_var)) { 
+    p <- p + 
+      facet_wrap(~Location, ncol = n_col) + 
+      #geofacet::facet_geo(~Location, grid=mygrid) +
+      geom_line(#data=df_to_plot[, c("date_shift", "value", "Location_bkg")],
+        data = transform(df_to_plot, Location=NULL),
+                aes(x=date_shift, y=value, group=Location_bkg), 
+                color="grey") +
+      geom_line(color = emph_color) + geom_point(color = emph_color, size=2)
+      
+  } else {
+    p <- p +
+      geom_line(aes(
+        #color=regiao
+        )) + 
+      geom_point(aes(
+        #color=regiao
+        ), size=2/3) +
+
+      ggrepel::geom_label_repel(aes(
+        #color=regiao,
+        label=label),
+        size = 2.75,
+        nudge_x = 2, 
+        segment.color="grey") +
+      scale_colour_brewer(palette="Set1")
+      
+  }
+  
+  return(p)
+}
+gg_theme <- theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text=element_text(size=rel(1)),
+        plot.title = element_text(size=rel(2)),
+        plot.subtitle = element_text(size=rel(1.5)))
+
+```
+
+
+## plots 
+
+```{r fig.height=8, fig.width=10}
+filter_estados <- estado_capital %>% 
+  filter(regiao == unique(estado_capital$regiao)) %>% pull(capital) #%>% pull(sigla)/capital
+
+(p <- gen_plot(df_br,
+               #filter_state = filter_estados,
+               filter_state = T,
+               filter_category = "Daily_Cases",
+               #n_col = 3,
+               proportional = F, 
+               #wrap_on_var = T
+               #null_day_threshold = 1
+) + 
+    theme_minimal() +
+    gg_theme + facet_wrap(~regiao)
+)
+```
+
+
+```{r fig.height=8, fig.width=10}
+debugonce(gen_plot)
+```
+
+
+```{r centro-oeste, fig.height=14, fig.width=14}
+filter_estados <- estado_capital %>% 
+  filter(regiao == unique(estado_capital$regiao)[2]) %>% pull(sigla)
+
+
+(filter_cidades <- df_br %>%
+  pull(capital) %>% unique()
+)
+
+for (i in 1:2) {
+  p <- gen_plot(df_br,
+           #filter_state = filter_estados,
+           #filter_city = filter_cidades,
+           filter_city = T,
+           filter_category = c("Cum_Deaths", "Cum_Cases")[i], 
+           #n_col = 3,
+           proportional = F
+           #null_day_threshold = 1
+  ) + 
+    theme_minimal() +
+    gg_theme + facet_wrap(~regiao)
+
+  print(p)
+}
+
+```
+
+
+
+```{r centro-oeste, fig.height=6, fig.width=8}
+filter_estados <- estado_capital %>% 
+  filter(regiao == unique(estado_capital$regiao)[3]) %>% pull(sigla)
+
+for (i in 1:2) {
+  p <- gen_plot(df_br,
+           filter_state = filter_estados,
+           filter_category = c("Cum_Deaths", "Cum_Cases")[i], 
+           #n_col = 3,
+           proportional = F
+           #null_day_threshold = 1
+  ) + gg_theme #+ theme_minimal() #+ theme_void()
+  print(p)
+}
+
+```
+
+
+
+```{r sudeste, fig.width=8, fig.height=6}
+filter_estados <- estado_capital %>% 
+  filter(regiao == unique(estado_capital$regiao)[4]) %>% pull(sigla)
+
+for (i in 1:2) {
+  p <- gen_plot(df_br,
+           filter_state = filter_estados,
+           filter_category = c("Cum_Deaths", "Cum_Cases")[i], 
+           #n_col = 3,
+           proportional = F
+           #null_day_threshold = 1
+  ) + gg_theme #+ theme_minimal() #+ theme_void()
+  print(p)
+}
+
+```
+
+
+
+
+```{r sudeste, fig.width=8, fig.height=4}
+filter_estados <- estado_capital %>% 
+  filter(regiao == unique(estado_capital$regiao)[5]) %>% pull(sigla)
+
+for (i in 1:2) {
+  p <- gen_plot(df_br,
+           filter_state = filter_estados,
+           filter_category = c("Cum_Deaths", "Cum_Cases")[i], 
+           #n_col = 3,
+           proportional = F
+           #null_day_threshold = 1
+  ) + gg_theme #+ theme_minimal() #+ theme_void()
+  print(p)
+}
+
+```
+
+
+
+
+```{r sudeste, fig.width=9, fig.height=7}
+filter_cidades <- estado_capital %>% 
+  filter(regiao == unique(estado_capital$regiao)[5]) %>% pull(capital)
+filter_cidades <- df_br %>% 
+  filter(regiao==unique(estado_capital$regiao)[5]) %>% pull(city)
+
+for (i in 1:2) {
+  p <- gen_plot(df_br,
+           filter_city = filter_cidades,
+           filter_category = c("Cum_Deaths", "Cum_Cases")[i], 
+           #n_col = 3,
+           proportional = F,
+           #null_day_threshold = 3
+  ) + gg_theme #+ theme_minimal() #+ theme_void()
+  print(p)
+}
+
+```
+
+
+
+```{r fig.height=10, fig.width=10}
+top12_city <- df_br %>% 
+  arrange(desc(value)) %>% 
+  filter(place_type=="city", 
+         Category == "Cum_Deaths") %>% 
+  select(city) %>% pull() %>% unique() %>% head(12)
+gen_plot(df_br,
+         #filter_state = "SP",
+         filter_city = top12_city,
+         filter_category = c("Cum_Deaths", "Cum_Cases")[2], 
+         n_col = 4, 
+         #wrap_on_var = "city",
+         null_day_threshold = 25
+         ) + gg_theme 
+
+```
+
+```{r fig.height=20}
+cat <- c("Cum_Deaths", "Cum_Cases")[2]
+sel_cities <- df_br %>% 
+  filter(Category == cat) %>% 
+  # filter(state=="RJ") %>% 
+  arrange(desc(value)) %>% 
+  filter(place_type=="city", 
+         city!="Importados/Indefinidos") %>%
+  select(city) %>% pull() %>% unique() %>% head(40)
+
+gen_plot(df_br,
+         #filter_state = "SP",
+         filter_city = sel_cities,
+         filter_category = cat, 
+         n_col = 4, 
+         null_day_threshold = 3
+         ) + gg_theme 
+
+```
+
+### log ratio
+
+```{r log ratio, fig.height=16, fig.width=10, message=FALSE, warning=FALSE}
+atualzado_em <- df_br %>% pull(date) %>% max() %>% format("%d de %B")
+wdn <- 7
+color <- "red"
+state_l <- df_br$state %>% unique()
+x_days <- 21
+df_br %>% #filter(state %in% state_l[1:6]) %>% 
+  group_by(state) %>% 
+  filter(Category == "Cum_Cases", place_type == "state") %>% 
+  mutate(value=slider::slide_dbl(value, .size = wdn, mean, na.rm = TRUE)) %>% 
+  #mutate(value = if_else(value==0, NA_real_, value)) %>% 
+  mutate(cases_logratio = tsibble::difference(log(value))) %>%
+  
+  mutate(pct_delta = 100 * (exp(cases_logratio)-1)) %>% 
+  #mutate(pct_delta = if_else(pct_delta==Inf, NA_real_, pct_delta))
+  filter(date >= as.POSIXct(Sys.Date() - x_days)) %>%
+  
+  ggplot(aes(x = date, y = cases_logratio, group = estado)) +
+  geom_smooth(method = "loess", color=color, se = T) +
+  geom_point() +
+
+  facet_wrap(. ~ estado, ncol = 5) +
+  xlab("") +
+  scale_y_continuous(
+    paste0("Crescimento percentual diário"),
+    breaks = log(1 + seq(0,300,by=15)/100),
+    labels = paste0(seq(0,300,by=15) ,"%"),
+    minor_breaks=seq(0,300,by=25),
+    limits = c(-.05 , .5)
+    ) +
+  scale_x_date(date_breaks = "1 week", date_minor_breaks = "days",
+               date_labels = "%d/%m") + 
+  labs(title=paste0("Evolução do COVID-19 no Brasil nos útimos ", x_days, " dias"),
+       subtitle=paste0("Crescimento percentual diário de casos confirmados (Atualizado em ", atualzado_em, ", média móvel de ", wdn,  " dias)"),
+       #subtitle=paste0("Crescimento percentual diário em casos confirmados (Atualizado em ", atualzado_em, ")"), 
+       caption="Código: github.com/avila/corona/
+       Dados: https://brasil.io/dataset/covid19/caso\n
+       Grupo Análise COVID-19\n  www.analisecovid19.org \n Twitter @analise_covid19 \n Instagram & Facebook @analise.covid19") +
+  ggthemes::scale_color_colorblind() + 
+  theme(plot.title = element_text(size=22, face='bold'), 
+        title = element_text(size=12))
+
+ggsave(paste0("/tmp/covid_logratio_br_", format(Sys.Date(), "%Y_%m_%d"), ".png"), dpi = 300)
+
+```
+
+```{r}
+xx %>% filter(state=="RR") %>% pull(value) %>% plot()
+```
+
+```{r}
+df_br %>% filter(state=="RR", place_type=="state", Category == "Cum_Cases") 
+```
+
+```{r}
+
+```
+
+```{r}
+df_br %>% filter(Category=="Cum_Cases", state=="AP", place_type=="state") 
+```
+
+
+```{r fig.height=4, fig.width=8}
+df_br %>% filter(
+  Category=="Cum_Cases", state %in% c("RJ", "PR"), place_type=="state"
+) %>% ggplot(aes(y=value, x=date, group=state)) + 
+  geom_line() + facet_wrap(~state) + 
+  ggtitle("Rascunho: Casos de Covid-19")
+```
+
+```{r fig.width=8, fig.height=6}
+r1 <- 1.2
+r2 <- 1.5
+y1 <- c(1, rep(NA, 19))
+y2 <- y1
+y3 <- y1
+x <- 1:20
+for (i in 2:20) { 
+  y1[i] <- y1[i-1] * r1
+  y2[i] <- y2[i-1] * (ifelse(i<11, r1, r2))
+  y3[i] <- y3[i-1] + .5
+}
+
+
+
+par(mfrow=c(1,2))
+plot(x,y1, type="l", lwd=3)
+lines(x,y2, type="l", lwd=2, col="red")
+lines(x,y3, type="l", col="blue")
+abline(v=10, col="grey", lty=3)
+grid()
+
+plot(x,y1, type="l", lwd=4, log="y")
+lines(x,y2, type="l", lwd=2, col="red")
+lines(x,y3, type="l", col="blue")
+abline(v=10, col="grey", lty=3)
+grid()
+legend(1, 30, legend=c("Com quebra", "Linear", "Sem Quebra"),
+       col=c("red", "blue", "black"), lty=1, lwd=c(1,1,3), cex=0.8)
+```
+
